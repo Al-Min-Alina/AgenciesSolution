@@ -45,15 +45,18 @@ else
 }
 
 // Add services to the container
-builder.Services.AddControllers(options =>
-{
-    options.Filters.Add<ValidationFilter>();
-})
-.AddFluentValidation(fv =>
-{
-    fv.RegisterValidatorsFromAssemblyContaining<CreatePropertyRequestValidator>();
-    fv.ImplicitlyValidateChildProperties = true;
-});
+//builder.Services.AddControllers(options =>
+//{
+//    options.Filters.Add<ValidationFilter>();
+//})
+//.AddFluentValidation(fv =>
+//{
+//    fv.RegisterValidatorsFromAssemblyContaining<CreatePropertyRequestValidator>();
+//    fv.ImplicitlyValidateChildProperties = true;
+//});
+
+// Add services to the container
+builder.Services.AddControllers();
 
 // Configure Swagger only in development/staging
 if (builder.Configuration.GetValue<bool>("Features:EnableSwagger", true))
@@ -111,6 +114,8 @@ if (builder.Configuration.GetValue<bool>("Features:EnableSwagger", true))
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IReportsService, ReportsService>();
+
+builder.Services.AddScoped<ValidationFilter>();
 
 // HttpClient
 builder.Services.AddHttpClient<IReportsService, ReportsService>();
@@ -310,27 +315,76 @@ app.Use(async (context, next) =>
     if ((context.Request.Method == "POST" || context.Request.Method == "PUT")
         && context.Request.Path.StartsWithSegments("/api"))
     {
-        Console.WriteLine("=== ДЕТАЛЬНЫЙ ЛОГ ЗАПРОСА ===");
+        Console.WriteLine($"=== ДЕТАЛЬНЫЙ ЛОГ ЗАПРОСА [{DateTime.Now:HH:mm:ss.fff}] ===");
         Console.WriteLine($"URL: {context.Request.Method} {context.Request.Path}");
+        Console.WriteLine($"Query: {context.Request.QueryString}");
         Console.WriteLine($"Content-Type: {context.Request.ContentType}");
         Console.WriteLine($"Content-Length: {context.Request.ContentLength}");
+
+        // ДОБАВЬТЕ ЭТУ ИНФОРМАЦИЮ:
+        Console.WriteLine($"User-Agent: {context.Request.Headers["User-Agent"]}");
+        Console.WriteLine($"Referer: {context.Request.Headers["Referer"]}");
+        Console.WriteLine($"Origin: {context.Request.Headers["Origin"]}");
+        Console.WriteLine($"Host: {context.Request.Host}");
+        Console.WriteLine($"Remote IP: {context.Connection.RemoteIpAddress}");
+        Console.WriteLine($"Remote Port: {context.Connection.RemotePort}");
+
+        // Заголовки авторизации (маскируем токен)
+        var authHeader = context.Request.Headers["Authorization"].ToString();
+        if (!string.IsNullOrEmpty(authHeader))
+        {
+            if (authHeader.Length > 50)
+            {
+                Console.WriteLine($"Authorization: {authHeader.Substring(0, 50)}...");
+            }
+            else
+            {
+                Console.WriteLine($"Authorization: {authHeader}");
+            }
+        }
 
         // Сохраняем оригинальный поток
         context.Request.EnableBuffering();
 
         // Читаем тело запроса
         var bodyStream = context.Request.Body;
-        using (var reader = new StreamReader(bodyStream, Encoding.UTF8,
-               leaveOpen: true))
+        using (var reader = new StreamReader(bodyStream, Encoding.UTF8, leaveOpen: true))
         {
             var body = await reader.ReadToEndAsync();
-            Console.WriteLine($"Body: {body}");
+            if (string.IsNullOrEmpty(body) || body == "null")
+            {
+                Console.WriteLine($"Body: [EMPTY or NULL] (length: {body?.Length ?? 0})");
+            }
+            else
+            {
+                Console.WriteLine($"Body: {body}");
+            }
 
             // Возвращаем поток в начало
             bodyStream.Position = 0;
         }
 
         Console.WriteLine("--- КОНЕЦ ЛОГА ---");
+
+        // Записываем в файл для дальнейшего анализа
+        try
+        {
+            var logDir = Path.Combine(Directory.GetCurrentDirectory(), "logs");
+            if (!Directory.Exists(logDir))
+                Directory.CreateDirectory(logDir);
+
+            var logFile = Path.Combine(logDir, $"requests_{DateTime.Now:yyyyMMdd}.log");
+            var logEntry = $"[{DateTime.Now:HH:mm:ss.fff}] {context.Request.Method} {context.Request.Path} " +
+                          $"RemoteIP:{context.Connection.RemoteIpAddress} " +
+                          $"UserAgent:{context.Request.Headers["User-Agent"]} " +
+                          $"BodySize:{context.Request.ContentLength}\n";
+
+            File.AppendAllText(logFile, logEntry);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка записи в лог-файл: {ex.Message}");
+        }
     }
 
     await next();

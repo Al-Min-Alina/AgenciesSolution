@@ -47,6 +47,10 @@ namespace Agencies.Client
             dgClients.ItemsSource = _clients;
             dgDeals.ItemsSource = _deals;
 
+            dgProperties.SelectionChanged += (s, e) => UpdateEditButtons();
+            dgClients.SelectionChanged += (s, e) => UpdateEditButtons();
+            dgDeals.SelectionChanged += (s, e) => UpdateEditButtons();
+
             // Настройка таймера автообновления (каждые 5 минут)
             _autoRefreshTimer = new DispatcherTimer
             {
@@ -63,6 +67,16 @@ namespace Agencies.Client
             _dataLoader.DataLoaded += OnDataLoaded;
             _dataLoader.LoadingStatusChanged += OnLoadingStatusChanged;
             _dataLoader.LoadingError += OnLoadingError;
+        }
+
+        private void CheckLoadingComplete()
+        {
+            // Этот метод можно расширить для более точного отслеживания загрузки
+            if (_isLoading)
+            {
+                _isLoading = false;
+                UpdateUIForLoading(false); // Восстанавливаем кнопки
+            }
         }
 
         private void OnDataLoaded(object sender, DataLoadedEventArgs e)
@@ -107,18 +121,14 @@ namespace Agencies.Client
 
                 // Проверяем, завершена ли загрузка всех данных
                 CheckLoadingComplete();
-            });
-        }
 
-        private void CheckLoadingComplete()
-        {
-            // Этот метод можно расширить для более точного отслеживания загрузки
-            // Пока просто сбрасываем флаг загрузки при любом обновлении данных
-            if (_isLoading)
-            {
-                _isLoading = false;
-                UpdateUIForLoading(false);
-            }
+                // Обновляем статус
+                tbStatus.Text = $"Загружено: {_properties.Count} объектов, {_clients.Count} клиентов, {_deals.Count} сделок";
+                tbConnectionStatus.Text = "Подключено";
+
+                // ВОССТАНАВЛИВАЕМ кнопки редактирования
+                UpdateEditButtons(); // Добавить эту строку
+            });
         }
 
         private void OnLoadingStatusChanged(object sender, string status)
@@ -160,6 +170,8 @@ namespace Agencies.Client
                 UpdateProgress(100, "Загрузка завершена");
                 HideProgressDialog();
 
+                UpdateEditButtons();
+                
                 // Запускаем автообновление, если пользователь админ
                 if (_currentUser.Role == "Admin")
                 {
@@ -198,14 +210,14 @@ namespace Agencies.Client
 
                     // Показываем/скрываем функционал в зависимости от роли
                     tabReports.IsEnabled = _currentUser.Role == "Admin";
-                    btnAddProperty.IsEnabled = _currentUser.Role == "Admin";
-                    btnEditProperty.IsEnabled = _currentUser.Role == "Admin";
-                    btnDeleteProperty.IsEnabled = _currentUser.Role == "Admin";
 
                     // Включаем чекбоксы автообновления только для админов
                     cbAutoRefreshProperties.IsEnabled = _currentUser.Role == "Admin";
                     cbAutoRefreshClients.IsEnabled = _currentUser.Role == "Admin";
                     cbAutoRefreshDeals.IsEnabled = _currentUser.Role == "Admin";
+
+                    // ВЫЗЫВАЕМ UpdateEditButtons чтобы обновить все кнопки редактирования
+                    UpdateEditButtons();
                 }
                 else
                 {
@@ -215,9 +227,19 @@ namespace Agencies.Client
 
                     // Блокируем функционал
                     tabReports.IsEnabled = false;
+
+                    // Отключаем все кнопки редактирования
                     btnAddProperty.IsEnabled = false;
                     btnEditProperty.IsEnabled = false;
                     btnDeleteProperty.IsEnabled = false;
+
+                    btnAddClient.IsEnabled = false;
+                    btnEditClient.IsEnabled = false;
+                    btnDeleteClient.IsEnabled = false;
+
+                    btnAddDeal.IsEnabled = false;
+                    btnEditDeal.IsEnabled = false;
+                    btnDeleteDeal.IsEnabled = false;
 
                     // Отключаем чекбоксы автообновления
                     cbAutoRefreshProperties.IsEnabled = false;
@@ -305,44 +327,27 @@ namespace Agencies.Client
 
             if (dgProperties.SelectedItem is PropertyDto selectedProperty)
             {
-                // 🔥 ПЕРЕДАЙТЕ ID И ОБЪЕКТ
+                // Открываем диалог
                 var dialog = new PropertyDialog(selectedProperty.Id, selectedProperty);
 
-                if (dialog.ShowDialog() == true)
+                // Просто открываем диалог - он сам сохранит данные
+                bool? result = dialog.ShowDialog();
+
+                if (result == true)
                 {
+                    // Диалог успешно сохранил данные на сервере
+                    // Обновляем локальные данные
+
                     try
                     {
-                        ShowProgressDialog("Обновление объекта", "Сохранение изменений...");
-
-                        var updatedProperty = await Task.Run(async () =>
-                        {
-                            return await _apiService.UpdatePropertyAsync(
-                                selectedProperty.Id, dialog.UpdateRequest);
-                        });
-
-                        await Dispatcher.InvokeAsync(() =>
-                        {
-                            // Обновляем элемент в коллекции
-                            var index = _properties.IndexOf(selectedProperty);
-                            _properties[index] = updatedProperty;
-
-                            tbStatus.Text = "Объект успешно обновлен";
-                        });
-
-                        // Обновляем кеш
-                        _dataLoader.ClearCache();
+                        // Обновляем список объектов
+                        await _dataLoader.LoadPropertiesAsync(true); // force refresh
+                        tbStatus.Text = "Объект успешно обновлен";
                     }
                     catch (Exception ex)
                     {
-                        Dispatcher.Invoke(() =>
-                        {
-                            MessageBox.Show($"Ошибка обновления: {ex.Message}", "Ошибка",
-                                MessageBoxButton.OK, MessageBoxImage.Error);
-                        });
-                    }
-                    finally
-                    {
-                        HideProgressDialog();
+                        MessageBox.Show($"Ошибка обновления списка: {ex.Message}", "Ошибка",
+                            MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
             }
@@ -453,9 +458,15 @@ namespace Agencies.Client
                 return;
             }
 
-            var dialog = new ClientDialog(_apiService)
+            var userDto = new UserDto
             {
-                IsAdmin = _currentUser.Role == "Admin",
+                Id = _currentUser.Id,
+                Username = _currentUser.Username,
+                Role = _currentUser.Role
+            };
+
+            var dialog = new ClientDialog(_apiService, userDto)
+            {
                 Owner = this
             };
 
@@ -513,76 +524,106 @@ namespace Agencies.Client
                 return;
             }
 
-            if (dgClients.SelectedItem is ClientDto selectedClient)
-            {
-                // Проверка прав для редактирования
-                if (_currentUser.Role != "Admin" && selectedClient.AgentId != _currentUser.Id)
+                if (dgClients.SelectedItem is ClientDto selectedClient)
                 {
-                    MessageBox.Show("Вы можете редактировать только своих клиентов", "Доступ запрещен",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                var dialog = new ClientDialog(_apiService, selectedClient)
-                {
-                    IsAdmin = _currentUser.Role == "Admin",
-                    Owner = this
-                };
-
-                if (dialog.ShowDialog() == true)
-                {
-                    try
+                    // Проверка прав для редактирования
+                    if (_currentUser.Role != "Admin" && selectedClient.AgentId != _currentUser.Id)
                     {
-                        ShowProgressDialog("Обновление клиента", "Сохранение изменений...");
+                        MessageBox.Show("Вы можете редактировать только своих клиентов", "Доступ запрещен",
+                            MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
 
-                        var updatedClient = await Task.Run(async () =>
+                    // Создаем UserDto из LoginResponse
+                    var userDto = new UserDto
+                    {
+                        Id = _currentUser.Id,
+                        Username = _currentUser.Username,
+                        Role = _currentUser.Role
+                    };
+
+                    // Теперь правильно: ApiService, UserDto, ClientDto (selectedClient для редактирования)
+                    var dialog = new ClientDialog(_apiService, userDto, selectedClient)
+                    {
+                        Owner = this
+                    };
+
+                    if (dialog.ShowDialog() == true)
+                    {
+                        try
                         {
-                            return await _apiService.UpdateClientAsync(
-                                selectedClient.Id,
-                                new UpdateClientRequest
-                                {
-                                    FirstName = dialog.Client.FirstName,
-                                    LastName = dialog.Client.LastName,
-                                    Phone = dialog.Client.Phone,
-                                    Email = dialog.Client.Email,
-                                    Requirements = dialog.Client.Requirements,
-                                    Budget = dialog.Client.Budget,
-                                    AgentId = _currentUser.Role == "Admin" ? dialog.Client.AgentId : null
-                                });
-                        });
+                            ShowProgressDialog("Обновление клиента", "Сохранение изменений...");
+
+                            var updatedClient = await Task.Run(async () =>
+                            {
+                                return await _apiService.UpdateClientAsync(
+                                    selectedClient.Id,
+                                    new UpdateClientRequest
+                                    {
+                                        FirstName = dialog.Client.FirstName,
+                                        LastName = dialog.Client.LastName,
+                                        Phone = dialog.Client.Phone,
+                                        Email = dialog.Client.Email,
+                                        Requirements = dialog.Client.Requirements,
+                                        Budget = dialog.Client.Budget,
+                                        AgentId = _currentUser.Role == "Admin" ? dialog.Client.AgentId : null
+                                    });
+                            });
 
                         await Dispatcher.InvokeAsync(() =>
                         {
-                            // Обновляем элемент в коллекции
-                            var index = _clients.IndexOf(selectedClient);
-                            _clients[index] = updatedClient;
+                            // Находим индекс клиента по ID (а не по ссылке на объект)
+                            var index = -1;
+                            for (int i = 0; i < _clients.Count; i++)
+                            {
+                                if (_clients[i].Id == selectedClient.Id) // Сравниваем по ID
+                                {
+                                    index = i;
+                                    break;
+                                }
+                            }
 
-                            tbStatus.Text = "Клиент успешно обновлен";
+                            if (index >= 0)
+                            {
+                                // Заменяем объект целиком
+                                _clients[index] = updatedClient;
+
+                                tbStatus.Text = "Клиент успешно обновлен";
+                                Console.WriteLine($"Клиент обновлен в списке на позиции {index}");
+                            }
+                            else
+                            {
+                                // Если клиент не найден (маловероятно), добавляем новый
+                                _clients.Add(updatedClient);
+                                tbStatus.Text = "Клиент добавлен";
+                                Console.WriteLine("Клиент не найден в списке, добавлен новый");
+                            }
                         });
 
                         // Обновляем кеш
                         _dataLoader.ClearCache();
-                    }
-                    catch (Exception ex)
-                    {
-                        Dispatcher.Invoke(() =>
+                        }
+                        catch (Exception ex)
                         {
-                            MessageBox.Show($"Ошибка обновления: {ex.Message}", "Ошибка",
-                                MessageBoxButton.OK, MessageBoxImage.Error);
-                        });
-                    }
-                    finally
-                    {
-                        HideProgressDialog();
+                            Dispatcher.Invoke(() =>
+                            {
+                                MessageBox.Show($"Ошибка обновления: {ex.Message}", "Ошибка",
+                                    MessageBoxButton.OK, MessageBoxImage.Error);
+                            });
+                        }
+                        finally
+                        {
+                            HideProgressDialog();
+                        }
                     }
                 }
+                else
+                {
+                    MessageBox.Show("Выберите клиента для редактирования", "Внимание",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
             }
-            else
-            {
-                MessageBox.Show("Выберите клиента для редактирования", "Внимание",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-        }
+        
 
         private async void BtnDeleteClient_Click(object sender, RoutedEventArgs e)
         {
@@ -889,13 +930,18 @@ namespace Agencies.Client
             try
             {
                 ShowProgressDialog("Обновление", message);
-                await LoadDataAsync(false);
+                await _dataLoader.LoadAllDataAsync(); // Загружаем все данные
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка загрузки: {ex.Message}", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
                 HideProgressDialog();
-                _isLoading = false;
-                UpdateUIForLoading(false);
+                _isLoading = false; 
+                UpdateUIForLoading(false); 
             }
         }
 
@@ -962,6 +1008,8 @@ namespace Agencies.Client
         {
             Dispatcher.Invoke(() =>
             {
+                _isLoading = isLoading;
+
                 // Показываем/скрываем кнопки отмены в зависимости от активного таба
                 var currentTab = tcMain.SelectedItem as TabItem;
                 if (currentTab != null)
@@ -980,43 +1028,49 @@ namespace Agencies.Client
                     }
                 }
 
-                // Блокируем кнопки во время загрузки
-                bool isAdmin = _currentUser?.Role == "Admin";
-                bool canEdit = !isLoading && isAdmin;
-
+                // Блокируем кнопки обновления во время загрузки
                 btnRefreshProperties.IsEnabled = !isLoading;
                 btnRefreshClients.IsEnabled = !isLoading;
                 btnRefreshDeals.IsEnabled = !isLoading;
 
-                btnAddProperty.IsEnabled = canEdit;
-                btnEditProperty.IsEnabled = canEdit && dgProperties.SelectedItem != null;
-                btnDeleteProperty.IsEnabled = canEdit && dgProperties.SelectedItem != null;
+                if (isLoading)
+                {
+                    // Во время загрузки блокируем все кнопки редактирования
+                    btnAddProperty.IsEnabled = false;
+                    btnEditProperty.IsEnabled = false;
+                    btnDeleteProperty.IsEnabled = false;
 
-                btnAddClient.IsEnabled = !isLoading && _currentUser != null;
-                btnEditClient.IsEnabled = !isLoading && _currentUser != null && dgClients.SelectedItem != null;
-                btnDeleteClient.IsEnabled = !isLoading && isAdmin && dgClients.SelectedItem != null;
+                    btnAddClient.IsEnabled = false;
+                    btnEditClient.IsEnabled = false;
+                    btnDeleteClient.IsEnabled = false;
 
-                btnAddDeal.IsEnabled = !isLoading && _currentUser != null;
-                btnEditDeal.IsEnabled = !isLoading && _currentUser != null && dgDeals.SelectedItem != null;
-                btnDeleteDeal.IsEnabled = !isLoading && isAdmin && dgDeals.SelectedItem != null;
+                    btnAddDeal.IsEnabled = false;
+                    btnEditDeal.IsEnabled = false;
+                    btnDeleteDeal.IsEnabled = false;
+                }
+                else
+                {
+                    // После загрузки ВОССТАНАВЛИВАЕМ доступность кнопок
+                    UpdateEditButtons();
+                }
 
+                // Остальные элементы
+                bool isAdmin = _currentUser?.Role == "Admin";
                 btnGenerateSalesReport.IsEnabled = !isLoading && isAdmin;
                 btnGeneratePropertyReport.IsEnabled = !isLoading && isAdmin;
                 btnExportReport.IsEnabled = !isLoading && isAdmin;
 
-                // Блокируем чекбоксы автообновления во время загрузки
+                // Чекбоксы автообновления
                 cbAutoRefreshProperties.IsEnabled = !isLoading && isAdmin;
                 cbAutoRefreshClients.IsEnabled = !isLoading && isAdmin;
                 cbAutoRefreshDeals.IsEnabled = !isLoading && isAdmin;
 
-                // Блокируем поиск и фильтры
+                // Поиск и фильтры
                 txtSearchProperty.IsEnabled = !isLoading;
                 txtSearchClient.IsEnabled = !isLoading;
                 cbDealStatusFilter.IsEnabled = !isLoading;
             });
         }
-
-        // ===== СУЩЕСТВУЮЩИЕ МЕТОДЫ =====
 
         // Методы для управления автообновлением
         private void EnableAutoRefresh(bool enable)
@@ -1229,6 +1283,34 @@ namespace Agencies.Client
             }
         }
 
+        private void UpdateEditButtons()
+        {
+            // Всегда выполняем в UI потоке
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.Invoke(UpdateEditButtons);
+                return;
+            }
+
+            bool isAdmin = _currentUser?.Role == "Admin";
+            bool hasUser = _currentUser != null;
+
+            // Для объектов недвижимости
+            btnAddProperty.IsEnabled = isAdmin;
+            btnEditProperty.IsEnabled = isAdmin && dgProperties.SelectedItem != null;
+            btnDeleteProperty.IsEnabled = isAdmin && dgProperties.SelectedItem != null;
+
+            // Для клиентов
+            btnAddClient.IsEnabled = hasUser;
+            btnEditClient.IsEnabled = hasUser && dgClients.SelectedItem != null;
+            btnDeleteClient.IsEnabled = isAdmin && dgClients.SelectedItem != null;
+
+            // Для сделок
+            btnAddDeal.IsEnabled = hasUser;
+            btnEditDeal.IsEnabled = hasUser && dgDeals.SelectedItem != null;
+            btnDeleteDeal.IsEnabled = isAdmin && dgDeals.SelectedItem != null;
+        }
+
         private async void BtnExportReport_Click(object sender, RoutedEventArgs e)
         {
             if (_currentUser?.Role != "Admin")
@@ -1366,7 +1448,7 @@ namespace Agencies.Client
             }
         }
 
-        private async Task LoadPropertiesAsync(bool forceRefresh = false)
+        public async Task LoadPropertiesAsync(bool forceRefresh = false)
         {
             var properties = await _apiService.GetPropertiesAsync();
             OnDataLoaded(new DataLoadedEventArgs

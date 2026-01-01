@@ -1,9 +1,14 @@
 ﻿using Agencies.Client.Services;
 using Agencies.Client.ViewModels;
-using Agencies.Core.DTO;
-using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
+using Agencies.Core.DTO;
+using System;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -12,17 +17,19 @@ namespace Agencies.Client.Dialogs
     public partial class ClientDialog : Window
     {
         private readonly ApiService _apiService;
+        private readonly UserDto _currentUser;
         private readonly bool _isEditMode;
         private readonly ClientViewModel _viewModel;
-
-        public ClientDto Client => _viewModel.Client;
-        public bool IsAdmin { get; set; }
         private readonly ValidationService _validationService;
 
-        public ClientDialog(ApiService apiService, ClientDto client = null)
+        public ClientDto Client => _viewModel.Client;
+        public bool IsAdmin => _viewModel.IsAdmin;
+
+        public ClientDialog(ApiService apiService, UserDto currentUser, ClientDto client = null)
         {
             InitializeComponent();
             _apiService = apiService;
+            _currentUser = currentUser;
             _validationService = new ValidationService();
             _isEditMode = client != null;
 
@@ -30,7 +37,7 @@ namespace Agencies.Client.Dialogs
             {
                 Client = client ?? new ClientDto(),
                 WindowTitle = _isEditMode ? "Редактирование клиента" : "Новый клиент",
-                IsAdmin = false // Will be set from parent window
+                IsAdmin = currentUser?.Role == "Admin"
             };
 
             DataContext = _viewModel;
@@ -42,65 +49,179 @@ namespace Agencies.Client.Dialogs
         {
             try
             {
-                // Загружаем список агентов если пользователь - админ
-                if (IsAdmin)
-                {
-                    var agents = await LoadAgentsAsync();
-                    if (agents != null)
-                    {
-                        cbAgent.ItemsSource = agents;
-                        cbAgent.Visibility = Visibility.Visible;
-                        tbAgentLabel.Visibility = Visibility.Visible;
+                Console.WriteLine($"Инициализация диалога. Пользователь: {_currentUser?.Username}, Роль: {_currentUser?.Role}");
 
-                        if (_viewModel.Client.AgentId == 0)
-                        {
-                            // Устанавливаем текущего пользователя по умолчанию
-                            var currentUser = await GetCurrentUserAsync();
-                            if (currentUser != null)
-                            {
-                                _viewModel.Client.AgentId = currentUser.UserId;
-                            }
-                        }
+                // Загружаем список агентов если пользователь - админ
+                if (_viewModel.IsAdmin)
+                {
+                    Console.WriteLine($"Пользователь админ, загружаем список агентов...");
+                    await LoadAgentsAsync();
+                }
+                else if (_currentUser != null && _currentUser.Role == "User")
+                {
+                    // Для не-админов (агентов) устанавливаем себя как агента
+                    _viewModel.Client.AgentId = _currentUser.Id;
+
+                    // Скрываем элементы для выбора агента
+                    cbAgent.Visibility = Visibility.Collapsed;
+                    tbAgentLabel.Visibility = Visibility.Collapsed;
+
+                    // Показываем информационное сообщение
+                    if (tbAgentInfo != null)
+                    {
+                        tbAgentInfo.Text = $"Клиент будет закреплен за вами: {_currentUser.Username}";
+                        tbAgentInfo.Visibility = Visibility.Visible;
+                    }
+
+                    Console.WriteLine($"Клиент закреплен за агентом: {_currentUser.Username}");
+                }
+                else
+                {
+                    // Если пользователь не админ и не агент, скрываем выбор агента
+                    cbAgent.Visibility = Visibility.Collapsed;
+                    tbAgentLabel.Visibility = Visibility.Collapsed;
+
+                    if (tbAgentInfo != null)
+                    {
+                        tbAgentInfo.Visibility = Visibility.Collapsed;
                     }
                 }
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
+                Console.WriteLine($"Ошибка инициализации: {ex}");
                 _viewModel.ErrorMessage = $"Ошибка загрузки данных: {ex.Message}";
                 _viewModel.HasError = true;
             }
         }
 
-        private async Task<List<UserDto>> LoadAgentsAsync()
-        {
-            // В реальном приложении здесь был бы запрос к API для получения списка агентов
-            // Для демонстрации возвращаем тестовые данные
-            return await Task.Run(() =>
-            {
-                return new List<UserDto>
-                {
-                    new UserDto { Id = 1, Username = "agent1", Role = "User" },
-                    new UserDto { Id = 2, Username = "agent2", Role = "User" }
-                };
-            });
-        }
-
-        private async Task<UserProfile> GetCurrentUserAsync()
+        private async Task LoadAgentsAsync()
         {
             try
             {
-                // В реальном приложении получаем профиль из API
-                // Пока возвращаем тестовые данные
-                return await Task.Run(() => new UserProfile
+                // Загружаем агентов с сервера через ApiService
+                List<UserDto> agents = null;
+
+                try
                 {
-                    UserId = 1,
-                    Username = "current_user",
-                    Role = "User"
-                });
+                    agents = await _apiService.GetAgentsAsync();
+                    Console.WriteLine($"API вернул {agents?.Count ?? 0} агентов");
+                }
+                catch (HttpRequestException httpEx) when (httpEx.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    Console.WriteLine($"Доступ запрещен (403): {httpEx.Message}");
+
+                    if (_currentUser?.Role == "User")
+                    {
+                        // Используем только текущего пользователя как агента
+                        agents = new List<UserDto> { _currentUser };
+                        _viewModel.Client.AgentId = _currentUser.Id;
+
+                        // Скрываем выбор агента, показываем информацию
+                        cbAgent.Visibility = Visibility.Collapsed;
+                        tbAgentLabel.Visibility = Visibility.Collapsed;
+
+                        // Показываем информационное сообщение
+                        if (tbAgentInfo != null)
+                        {
+                            tbAgentInfo.Text = $"Клиент будет закреплен за вами: {_currentUser.Username}";
+                            tbAgentInfo.Visibility = Visibility.Visible;
+                        }
+
+                        Console.WriteLine($"Агент назначен на текущего пользователя: {_currentUser.Username}");
+                        return;
+                    }
+                }
+
+                if (agents != null && agents.Any())
+                {
+                    Console.WriteLine($"Успешно загружено {agents.Count} агентов");
+
+                    // Устанавливаем список агентов во ViewModel
+                    _viewModel.Agents = new ObservableCollection<UserDto>(agents);
+
+                    // Настраиваем ComboBox
+                    cbAgent.ItemsSource = _viewModel.Agents;
+                    cbAgent.DisplayMemberPath = "Username";
+                    cbAgent.SelectedValuePath = "Id";
+
+                    // Показываем элементы выбора агента
+                    cbAgent.Visibility = Visibility.Visible;
+                    tbAgentLabel.Visibility = Visibility.Visible;
+
+                    // Скрываем информационное сообщение
+                    if (tbAgentInfo != null)
+                    {
+                        tbAgentInfo.Visibility = Visibility.Collapsed;
+                    }
+
+                    // Выбор агента по умолчанию
+                    if (_viewModel.Client.AgentId > 0)
+                    {
+                        cbAgent.SelectedValue = _viewModel.Client.AgentId;
+                        Console.WriteLine($"Выбран существующий агент с ID: {_viewModel.Client.AgentId}");
+                    }
+                    else if (_currentUser?.Role == "User" && agents.Any(a => a.Id == _currentUser.Id))
+                    {
+                        // Выбираем текущего пользователя-агента
+                        cbAgent.SelectedValue = _currentUser.Id;
+                        Console.WriteLine($"Автовыбор текущего агента: {_currentUser.Username}");
+                    }
+                    else if (agents.Any())
+                    {
+                        // Или первого агента
+                        cbAgent.SelectedIndex = 0;
+                        var firstAgent = agents.First();
+                        Console.WriteLine($"Выбран первый агент: {firstAgent.Username}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"Агенты не загружены или список пуст");
+
+                    // Нет агентов или ошибка
+                    if (_currentUser?.Role == "User")
+                    {
+                        // Агент назначает клиента себе
+                        _viewModel.Client.AgentId = _currentUser.Id;
+                        cbAgent.Visibility = Visibility.Collapsed;
+                        tbAgentLabel.Visibility = Visibility.Collapsed;
+
+                        // Показываем информационное сообщение
+                        if (tbAgentInfo != null)
+                        {
+                            tbAgentInfo.Text = $"Клиент будет закреплен за вами";
+                            tbAgentInfo.Visibility = Visibility.Visible;
+                        }
+
+                        Console.WriteLine($"Агент назначен на текущего пользователя: {_currentUser.Username}");
+                    }
+                    else
+                    {
+                        _viewModel.ErrorMessage = "Нет доступных агентов в системе";
+                        _viewModel.HasError = true;
+                        cbAgent.Visibility = Visibility.Collapsed;
+                        tbAgentLabel.Visibility = Visibility.Collapsed;
+
+                        if (tbAgentInfo != null)
+                        {
+                            tbAgentInfo.Visibility = Visibility.Collapsed;
+                        }
+                    }
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                return null;
+                Console.WriteLine($"Ошибка загрузки агентов: {ex}");
+                _viewModel.ErrorMessage = $"Не удалось загрузить список агентов: {ex.Message}";
+                _viewModel.HasError = true;
+                cbAgent.Visibility = Visibility.Collapsed;
+                tbAgentLabel.Visibility = Visibility.Collapsed;
+
+                if (tbAgentInfo != null)
+                {
+                    tbAgentInfo.Visibility = Visibility.Collapsed;
+                }
             }
         }
 
@@ -118,27 +239,19 @@ namespace Agencies.Client.Dialogs
             _viewModel.HasError = false;
             _viewModel.ErrorMessage = string.Empty;
 
-            // Получаем Budget из ViewModel и преобразуем в decimal
-            decimal budgetValue;
-            if (_viewModel.Client.Budget.HasValue)
-            {
-                // Явное преобразование double? в decimal
-                budgetValue = Convert.ToDecimal(_viewModel.Client.Budget.Value);
-            }
-            else
-            {
-                budgetValue = 0m; // Значение по умолчанию
-            }
+            // Если Budget должен оставаться double?
+            double? budgetValue = _viewModel.Client.Budget ?? 0.0; 
 
             // Создаем DTO для валидации
-            var clientForValidation = new ClientValidationDto
+            var clientForValidation = new CreateClientRequest
             {
                 FirstName = _viewModel.Client.FirstName,
                 LastName = _viewModel.Client.LastName,
                 Phone = _viewModel.Client.Phone,
                 Email = _viewModel.Client.Email,
-                Budget = budgetValue,
-                Requirements = _viewModel.Client.Requirements
+                Budget = Convert.ToDouble(budgetValue.Value), 
+                Requirements = _viewModel.Client.Requirements,
+                AgentId = _viewModel.Client.AgentId ?? 0
             };
 
             // Используем метод валидации
@@ -150,15 +263,15 @@ namespace Agencies.Client.Dialogs
                 _viewModel.HasError = true;
 
                 // Фокусируемся на первом поле с ошибкой
-                if (validationResult.Errors.ContainsKey(nameof(ClientValidationDto.FirstName)))
+                if (validationResult.Errors.ContainsKey(nameof(CreateClientRequest.FirstName)))
                     txtFirstName.Focus();
-                else if (validationResult.Errors.ContainsKey(nameof(ClientValidationDto.LastName)))
+                else if (validationResult.Errors.ContainsKey(nameof(CreateClientRequest.LastName)))
                     txtLastName.Focus();
-                else if (validationResult.Errors.ContainsKey(nameof(ClientValidationDto.Email)))
+                else if (validationResult.Errors.ContainsKey(nameof(CreateClientRequest.Email)))
                     txtEmail.Focus();
-                else if (validationResult.Errors.ContainsKey(nameof(ClientValidationDto.Phone)))
+                else if (validationResult.Errors.ContainsKey(nameof(CreateClientRequest.Phone)))
                     txtPhone.Focus();
-                else if (validationResult.Errors.ContainsKey(nameof(ClientValidationDto.Budget)))
+                else if (validationResult.Errors.ContainsKey(nameof(CreateClientRequest.Budget)))
                     txtBudget.Focus();
 
                 return false;
@@ -166,18 +279,10 @@ namespace Agencies.Client.Dialogs
 
             return true;
         }
-
-        private bool IsValidEmail(string email)
+        private void BtnCancel_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                var addr = new System.Net.Mail.MailAddress(email);
-                return addr.Address == email;
-            }
-            catch
-            {
-                return false;
-            }
+            DialogResult = false;
+            Close();
         }
     }
 
@@ -211,118 +316,29 @@ namespace Agencies.Client.Dialogs
             set => SetProperty(ref _hasError, value);
         }
 
+        private ObservableCollection<UserDto> _agents;
+        public ObservableCollection<UserDto> Agents
+        {
+            get => _agents;
+            set => SetProperty(ref _agents, value);
+        }
+
         public bool IsAdmin { get; set; }
 
-        public bool CanSave => !string.IsNullOrWhiteSpace(Client?.FirstName) &&
-                              !string.IsNullOrWhiteSpace(Client?.LastName);
-    }
-
-    public class UserProfile
-    {
-        public int UserId { get; set; }
-        public string Username { get; set; }
-        public string Role { get; set; }
-    }
-
-    // Класс для валидации клиента
-    public class ClientValidationDto
-    {
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public string Phone { get; set; }
-        public string Email { get; set; }
-        public decimal Budget { get; set; }
-        public string Requirements { get; set; }
-    }
-
-    // Результат валидации
-    public class ValidationResult
-    {
-        public bool IsValid { get; set; }
-        public string Summary { get; set; }
-        public Dictionary<string, string> Errors { get; set; } = new Dictionary<string, string>();
-    }
-
-    // Реализация ValidationService
-    public class ValidationService
-    {
-        public ValidationResult ValidateClient(ClientValidationDto client)
+        public bool CanSave
         {
-            var result = new ValidationResult();
-            var errors = new Dictionary<string, string>();
-
-            // Валидация имени
-            if (string.IsNullOrWhiteSpace(client.FirstName))
+            get
             {
-                errors[nameof(ClientValidationDto.FirstName)] = "Имя обязательно для заполнения";
-            }
-            else if (client.FirstName.Length > 50)
-            {
-                errors[nameof(ClientValidationDto.FirstName)] = "Имя не должно превышать 50 символов";
-            }
-
-            // Валидация фамилии
-            if (string.IsNullOrWhiteSpace(client.LastName))
-            {
-                errors[nameof(ClientValidationDto.LastName)] = "Фамилия обязательна для заполнения";
-            }
-            else if (client.LastName.Length > 50)
-            {
-                errors[nameof(ClientValidationDto.LastName)] = "Фамилия не должна превышать 50 символов";
-            }
-
-            // Валидация email
-            if (!string.IsNullOrWhiteSpace(client.Email))
-            {
-                if (!IsValidEmail(client.Email))
+                Console.WriteLine($"Проверка CanSave: Client={Client != null}");
+                if (Client != null)
                 {
-                    errors[nameof(ClientValidationDto.Email)] = "Неверный формат email";
+                    Console.WriteLine($"  FirstName='{Client.FirstName}' (пусто: {string.IsNullOrWhiteSpace(Client.FirstName)})");
+                    Console.WriteLine($"  LastName='{Client.LastName}' (пусто: {string.IsNullOrWhiteSpace(Client.LastName)})");
+                    Console.WriteLine($"  Email='{Client.Email}' (пусто: {string.IsNullOrWhiteSpace(Client.Email)})");
+                    Console.WriteLine($"  Phone='{Client.Phone}' (пусто: {string.IsNullOrWhiteSpace(Client.Phone)})");
                 }
+                return true;
             }
-
-            // Валидация телефона
-            if (!string.IsNullOrWhiteSpace(client.Phone))
-            {
-                if (!IsValidPhone(client.Phone))
-                {
-                    errors[nameof(ClientValidationDto.Phone)] = "Неверный формат телефона";
-                }
-            }
-
-            // Валидация бюджета
-            if (client.Budget < 0)
-            {
-                errors[nameof(ClientValidationDto.Budget)] = "Бюджет не может быть отрицательным";
-            }
-
-            result.IsValid = errors.Count == 0;
-            result.Errors = errors;
-
-            if (!result.IsValid)
-            {
-                result.Summary = string.Join("; ", errors.Values);
-            }
-
-            return result;
-        }
-
-        private bool IsValidEmail(string email)
-        {
-            try
-            {
-                var addr = new System.Net.Mail.MailAddress(email);
-                return addr.Address == email;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        private bool IsValidPhone(string phone)
-        {
-            // Простая валидация телефона
-            return System.Text.RegularExpressions.Regex.IsMatch(phone, @"^[\d\s\-\+\(\)]{6,20}$");
         }
     }
 }

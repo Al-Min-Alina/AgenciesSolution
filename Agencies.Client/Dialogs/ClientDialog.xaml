@@ -88,6 +88,14 @@
                           SelectedValuePath="Id"
                           SelectedValue="{Binding Client.AgentId}"/>
 
+                <TextBlock x:Name="tbAgentInfo" 
+           Text="" 
+           Foreground="Blue"
+           FontStyle="Italic"
+           Margin="0,0,0,10"
+           Visibility="Collapsed"
+           TextWrapping="Wrap"/>
+
                 <!-- Error Message -->
                 <TextBlock x:Name="tbError" 
                            Text="{Binding ErrorMessage}"
@@ -109,11 +117,13 @@
                     IsDefault="True"
                     Click="BtnSave_Click"
                     IsEnabled="{Binding CanSave}"/>
-            <Button Content="Отмена" 
-                    Width="100" 
-                    Height="30" 
-                    Margin="10,0,0,0"
-                    IsCancel="True"/>
+            <Button x:Name="btnCancel" 
+        Content="Отмена" 
+        Width="100" 
+        Height="30" 
+        Margin="10,0,0,0"
+        IsCancel="True"
+        Click="BtnCancel_Click"/>
         </StackPanel>
     </Grid>
 </Window>

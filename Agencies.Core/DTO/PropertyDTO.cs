@@ -62,8 +62,8 @@ namespace Agencies.Core.DTO
         [Range(0, 10000, ErrorMessage = "Площадь должна быть от 0 до 10 000 м²")]
         public double Area { get; set; } // 0 = не обновлять
 
-        [RegularExpression("^(Apartment|House|Commercial|Квартира|Дом|Коммерческая)$",
-            ErrorMessage = "Тип должен быть: Apartment/House/Commercial или Квартира/Дом/Коммерческая")]
+        [RegularExpression("^(Apartment|House|Commercial|Квартира|Дом|Коммерческая недвижимость)$",
+            ErrorMessage = "Тип должен быть: Apartment/House/Commercial или Квартира/Дом/Коммерческая недвижимость")]
         public string Type { get; set; } // null/empty = не обновлять
 
         [Range(-1, 100, ErrorMessage = "Количество комнат должно быть от -1 до 100")]

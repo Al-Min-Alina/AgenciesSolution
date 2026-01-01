@@ -422,14 +422,84 @@ namespace Agencies.Client.Services
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
-                    return $"✅ Подключено к API. Ответ: {content}";
+                    return $"Подключено к API. Ответ: {content}";
                 }
-                return $"❌ API ответил с ошибкой: {response.StatusCode}";
+                return $"API ответил с ошибкой: {response.StatusCode}";
             }
             catch (Exception ex)
             {
-                return $"❌ Ошибка подключения: {ex.Message}";
+                return $"Ошибка подключения: {ex.Message}";
             }
+        }
+
+        public async Task<List<UserDto>> GetAgentsAsync()
+        {
+            try
+            {
+                Console.WriteLine($"[GetAgentsAsync] Начало. BaseUrl: {_baseUrl}");
+                Console.WriteLine($"[GetAgentsAsync] Токен авторизации: {_httpClient.DefaultRequestHeaders.Authorization != null}");
+
+                var url = $"{_baseUrl}users/agents";
+                Console.WriteLine($"[GetAgentsAsync] Отправка запроса на: {url}");
+
+                var response = await _httpClient.GetAsync(url);
+
+                Console.WriteLine($"[GetAgentsAsync] Ответ получен. Status: {response.StatusCode}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[GetAgentsAsync] JSON ответ: {json}");
+
+                    var agents = JsonConvert.DeserializeObject<List<UserDto>>(json);
+                    Console.WriteLine($"[GetAgentsAsync] Десериализовано агентов: {agents?.Count ?? 0}");
+
+                    return agents ?? new List<UserDto>();
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    Console.WriteLine($"[GetAgentsAsync] Доступ запрещен (403)");
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[GetAgentsAsync] Ошибка: {errorContent}");
+                    throw new HttpRequestException("Доступ запрещен", null, response.StatusCode);
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[GetAgentsAsync] Ошибка HTTP {response.StatusCode}: {errorContent}");
+                    throw new HttpRequestException($"HTTP ошибка: {response.StatusCode}", null, response.StatusCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"🔴 [GetAgentsAsync] Исключение: {ex.Message}");
+                Console.WriteLine($"🔴 [GetAgentsAsync] StackTrace: {ex.StackTrace}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Получить пользователя по ID
+        /// </summary>
+        public async Task<UserDto> GetUserByIdAsync(int id)
+        {
+            var response = await _httpClient.GetAsync($"{_baseUrl}users/{id}");
+            response.EnsureSuccessStatusCode();
+
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<UserDto>(json);
+        }
+
+        /// <summary>
+        /// Получить всех пользователей (только для админов)
+        /// </summary>
+        public async Task<List<UserDto>> GetAllUsersAsync()
+        {
+            var response = await _httpClient.GetAsync($"{_baseUrl}users");
+            response.EnsureSuccessStatusCode();
+
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<List<UserDto>>(json);
         }
     }
 }
