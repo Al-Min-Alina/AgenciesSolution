@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  sql-server:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: agencies-sql
+    environment:
+      SA_PASSWORD: "YourStrongPassword123!"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Express"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql-data:/var/opt/mssql
+    networks:
+      - agencies-network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrongPassword123! -Q 'SELECT 1' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  api:
+    build:
+      context: .
+      dockerfile: Agencies.API/Dockerfile
+    container_name: agencies-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=sql-server;Database=AgenciesDB;User=sa;Password=YourStrongPassword123!;TrustServerCertificate=true;"
+      JwtSettings__SecretKey: "DevelopmentSecretKey123456789012345678901234567890"
+    ports:
+      - "5000:8080"
+      - "5001:8081"
+    depends_on:
+      sql-server:
+        condition: service_healthy
+    networks:
+      - agencies-network
+    volumes:
+      - ./logs/api:/app/logs
+    restart: unless-stopped
+
+  client:
+    build:
+      context: .
+      dockerfile: Agencies.Client/Dockerfile
+    container_name: agencies-client
+    environment:
+      API_BASE_URL: "http://api:8080"
+    ports:
+      - "3000:8080"
+    depends_on:
+      - api
+    networks:
+      - agencies-network
+    volumes:
+      - ./logs/client:/app/logs
+    restart: unless-stopped
+
+  swagger:
+    image: swaggerapi/swagger-ui
+    container_name: agencies-swagger
+    ports:
+      - "8080:8080"
+    environment:
+      API_URL: "http://api:8080/swagger/v1/swagger.json"
+    depends_on:
+      - api
+    networks:
+      - agencies-network
+
+  adminer:
+    image: adminer
+    container_name: agencies-adminer
+    ports:
+      - "8081:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: sql-server
+    depends_on:
+      - sql-server
+    networks:
+      - agencies-network
+
+volumes:
+  sql-data:
+
+networks:
+  agencies-network:
+    driver: bridge

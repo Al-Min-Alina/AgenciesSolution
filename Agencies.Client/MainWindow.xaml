@@ -1,0 +1,383 @@
+﻿<Window x:Class="Agencies.Client.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Agencies.Client"
+        mc:Ignorable="d"
+        Title="Риэлторское агентство" 
+        Height="700" 
+        Width="1200"
+        WindowStartupLocation="CenterScreen">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2c3e50" Padding="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" 
+                          Text="🏠 Риэлторское агентство" 
+                          Foreground="White" 
+                          FontSize="20" 
+                          FontWeight="Bold"
+                          VerticalAlignment="Center"/>
+
+                <StackPanel Grid.Column="2" 
+                            Orientation="Horizontal" 
+                            HorizontalAlignment="Right">
+                    <TextBlock Text="Пользователь: " 
+                              Foreground="White" 
+                              VerticalAlignment="Center"/>
+                    <TextBlock x:Name="tbUsername" 
+                              Text="Не авторизован" 
+                              Foreground="#3498db" 
+                              FontWeight="Bold"
+                              VerticalAlignment="Center" 
+                              Margin="5,0,20,0"/>
+
+                    <Button x:Name="btnLogin" 
+                            Content="Войти" 
+                            Padding="10,5"
+                            Click="BtnLogin_Click"/>
+                    <Button x:Name="btnLogout" 
+                            Content="Выйти" 
+                            Padding="10,5" 
+                            Margin="10,0,0,0"
+                            IsEnabled="False"
+                            Click="BtnLogout_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content -->
+        <TabControl Grid.Row="1" x:Name="tcMain" Margin="10">
+            <TabItem Header="Объекты недвижимости">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Toolbar for Properties -->
+                    <StackPanel Grid.Row="0" 
+                                Orientation="Horizontal" 
+                                Margin="0,0,0,10">
+                        <Button x:Name="btnRefreshProperties" 
+                                Content="Обновить" 
+                                Padding="10,5"
+                                Click="BtnRefreshProperties_Click"/>
+                        <Button x:Name="btnAddProperty" 
+                                Content="Добавить" 
+                                Padding="10,5" 
+                                Margin="10,0,0,0"
+                                Click="BtnAddProperty_Click"/>
+                        <Button x:Name="btnEditProperty" 
+                                Content="Редактировать" 
+                                Padding="10,5" 
+                                Margin="10,0,0,0"
+                                Click="BtnEditProperty_Click"/>
+                        <Button x:Name="btnDeleteProperty" 
+                                Content="Удалить" 
+                                Padding="10,5" 
+                                Margin="10,0,0,0"
+                                Click="BtnDeleteProperty_Click"/>
+
+                        <TextBox x:Name="txtSearchProperty" 
+                                 Width="200" 
+                                 Margin="20,0,0,0"
+                                 Padding="5"
+                                 TextChanged="TxtSearchProperty_TextChanged"/>
+                        <Button Content="Поиск" 
+                                Padding="10,5" 
+                                Margin="5,0,0,0"/>
+
+                        <!-- Новые элементы -->
+                        <Button x:Name="btnCancelRefreshProperties" 
+                                Content="Отменить" 
+                                Padding="10,5" 
+                                Margin="10,0,0,0"
+                                Click="BtnCancelRefresh_Click"
+                                Visibility="Collapsed"/>
+                        <CheckBox x:Name="cbAutoRefreshProperties" 
+                                  Content="Автообновление" 
+                                  Margin="20,0,0,0"
+                                  VerticalAlignment="Center"
+                                  Checked="CbAutoRefresh_Checked"
+                                  Unchecked="CbAutoRefresh_Unchecked"
+                                  IsEnabled="False"/>
+                    </StackPanel>
+
+                    <!-- Properties DataGrid -->
+                    <DataGrid Grid.Row="1" 
+                              x:Name="dgProperties" 
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              SelectionMode="Single"
+                              SelectionUnit="FullRow">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ID" 
+                                                Binding="{Binding Id}" 
+                                                Width="Auto"/>
+                            <DataGridTextColumn Header="Название" 
+                                                Binding="{Binding Title}" 
+                                                Width="200"/>
+                            <DataGridTextColumn Header="Адрес" 
+                                                Binding="{Binding Address}" 
+                                                Width="250"/>
+                            <DataGridTextColumn Header="Цена" 
+                                                Binding="{Binding Price, StringFormat=C}" 
+                                                Width="100"/>
+                            <DataGridTextColumn Header="Площадь" 
+                                                Binding="{Binding Area}" 
+                                                Width="80"/>
+                            <DataGridTextColumn Header="Тип" 
+                                                Binding="{Binding Type}" 
+                                                Width="100"/>
+                            <DataGridTextColumn Header="Комнат" 
+                                                Binding="{Binding Rooms}" 
+                                                Width="70"/>
+                            <DataGridCheckBoxColumn Header="Доступно" 
+                                                    Binding="{Binding IsAvailable}" 
+                                                    Width="70"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Клиенты">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Toolbar for Clients -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                        <Button x:Name="btnRefreshClients" 
+                                Content="Обновить" 
+                                Padding="10,5"
+                                Click="BtnRefreshClients_Click"/>
+                        <Button x:Name="btnAddClient" 
+                                Content="Добавить" 
+                                Padding="10,5" 
+                                Margin="10,0,0,0"
+                                Click="BtnAddClient_Click"/>
+                        <Button x:Name="btnEditClient" 
+                                Content="Редактировать" 
+                                Padding="10,5" 
+                                Margin="10,0,0,0"
+                                Click="BtnEditClient_Click"/>
+                        <Button x:Name="btnDeleteClient" 
+                                Content="Удалить" 
+                                Padding="10,5" 
+                                Margin="10,0,0,0"
+                                Click="BtnDeleteClient_Click"/>
+
+                        <TextBox x:Name="txtSearchClient" 
+                                 Width="200" 
+                                 Margin="20,0,0,0"
+                                 Padding="5"
+                                 TextChanged="TxtSearchClient_TextChanged"/>
+
+                        <!-- Новые элементы -->
+                        <Button x:Name="btnCancelRefreshClients" 
+                                Content="Отменить" 
+                                Padding="10,5" 
+                                Margin="10,0,0,0"
+                                Click="BtnCancelRefresh_Click"
+                                Visibility="Collapsed"/>
+                        <CheckBox x:Name="cbAutoRefreshClients" 
+                                  Content="Автообновление" 
+                                  Margin="20,0,0,0"
+                                  VerticalAlignment="Center"
+                                  Checked="CbAutoRefresh_Checked"
+                                  Unchecked="CbAutoRefresh_Unchecked"
+                                  IsEnabled="False"/>
+                    </StackPanel>
+
+                    <!-- Clients DataGrid -->
+                    <DataGrid Grid.Row="1" 
+                              x:Name="dgClients" 
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              SelectionMode="Single"
+                              SelectionUnit="FullRow">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ID" 
+                                                Binding="{Binding Id}" 
+                                                Width="Auto"/>
+                            <DataGridTextColumn Header="Имя" 
+                                                Binding="{Binding FirstName}" 
+                                                Width="120"/>
+                            <DataGridTextColumn Header="Фамилия" 
+                                                Binding="{Binding LastName}" 
+                                                Width="120"/>
+                            <DataGridTextColumn Header="Телефон" 
+                                                Binding="{Binding Phone}" 
+                                                Width="120"/>
+                            <DataGridTextColumn Header="Email" 
+                                                Binding="{Binding Email}" 
+                                                Width="150"/>
+                            <DataGridTextColumn Header="Бюджет" 
+                                                Binding="{Binding Budget, StringFormat=C}" 
+                                                Width="100"/>
+                            <DataGridTextColumn Header="Агент" 
+                                                Binding="{Binding AgentName}" 
+                                                Width="100"/>
+                            <DataGridTextColumn Header="Требования" 
+                                                Binding="{Binding Requirements}" 
+                                                Width="200"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Сделки">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Toolbar for Deals -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                        <Button x:Name="btnRefreshDeals" 
+                                Content="Обновить" 
+                                Padding="10,5"
+                                Click="BtnRefreshDeals_Click"/>
+                        <Button x:Name="btnAddDeal" 
+                                Content="Добавить" 
+                                Padding="10,5" 
+                                Margin="10,0,0,0"
+                                Click="BtnAddDeal_Click"/>
+                        <Button x:Name="btnEditDeal" 
+                                Content="Редактировать" 
+                                Padding="10,5" 
+                                Margin="10,0,0,0"
+                                Click="BtnEditDeal_Click"/>
+                        <Button x:Name="btnDeleteDeal" 
+                                Content="Удалить" 
+                                Padding="10,5" 
+                                Margin="10,0,0,0"
+                                Click="BtnDeleteDeal_Click"/>
+
+                        <ComboBox x:Name="cbDealStatusFilter" 
+                                  Width="120" 
+                                  Margin="20,0,0,0"
+                                  SelectionChanged="CbDealStatusFilter_SelectionChanged">
+                            <ComboBoxItem Content="Все" Tag=""/>
+                            <ComboBoxItem Content="В процессе" Tag="Pending"/>
+                            <ComboBoxItem Content="Завершены" Tag="Completed"/>
+                            <ComboBoxItem Content="Отменены" Tag="Cancelled"/>
+                        </ComboBox>
+
+                        <!-- Новые элементы -->
+                        <Button x:Name="btnCancelRefreshDeals" 
+                                Content="Отменить" 
+                                Padding="10,5" 
+                                Margin="10,0,0,0"
+                                Click="BtnCancelRefresh_Click"
+                                Visibility="Collapsed"/>
+                        <CheckBox x:Name="cbAutoRefreshDeals" 
+                                  Content="Автообновление" 
+                                  Margin="20,0,0,0"
+                                  VerticalAlignment="Center"
+                                  Checked="CbAutoRefresh_Checked"
+                                  Unchecked="CbAutoRefresh_Unchecked"
+                                  IsEnabled="False"/>
+                    </StackPanel>
+
+                    <!-- Deals DataGrid -->
+                    <DataGrid Grid.Row="1" 
+                              x:Name="dgDeals" 
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              SelectionMode="Single"
+                              SelectionUnit="FullRow">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ID" 
+                                                Binding="{Binding Id}" 
+                                                Width="Auto"/>
+                            <DataGridTextColumn Header="Объект" 
+                                                Binding="{Binding Property.Title}" 
+                                                Width="150"/>
+                            <DataGridTextColumn Header="Клиент" 
+                                                Binding="{Binding Client.FullName}" 
+                                                Width="150"/>
+                            <DataGridTextColumn Header="Сумма" 
+                                                Binding="{Binding DealAmount, StringFormat=C}" 
+                                                Width="100"/>
+                            <DataGridTextColumn Header="Дата" 
+                                                Binding="{Binding DealDate, StringFormat=d}" 
+                                                Width="100"/>
+                            <DataGridTextColumn Header="Статус" 
+                                                Binding="{Binding Status}" 
+                                                Width="100"/>
+                            <DataGridTextColumn Header="Агент" 
+                                                Binding="{Binding AgentName}" 
+                                                Width="100"/>
+                            <DataGridTextColumn Header="Создана" 
+                                                Binding="{Binding CreatedAt, StringFormat=d}" 
+                                                Width="100"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Отчеты" x:Name="tabReports" IsEnabled="False">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Toolbar for Reports -->
+                    <StackPanel Grid.Row="0" 
+                                Orientation="Horizontal" 
+                                Margin="0,0,0,10">
+                        <Button x:Name="btnGenerateSalesReport" 
+                                Content="Отчет по продажам" 
+                                Padding="10,5"
+                                Click="BtnGenerateSalesReport_Click"/>
+                        <Button x:Name="btnGeneratePropertyReport" 
+                                Content="Анализ объектов" 
+                                Padding="10,5" 
+                                Margin="10,0,0,0"
+                                Click="BtnGeneratePropertyReport_Click"/>
+                        <Button x:Name="btnExportReport" 
+                                Content="Экспорт в Excel" 
+                                Padding="10,5" 
+                                Margin="10,0,0,0"
+                                Click="BtnExportReport_Click"/>
+                    </StackPanel>
+
+                    <!-- Report Content Area -->
+                    <Frame Grid.Row="1" 
+                           x:Name="frameReportContent" 
+                           NavigationUIVisibility="Hidden"/>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <!-- Status Bar -->
+        <StatusBar Grid.Row="2">
+            <StatusBarItem>
+                <TextBlock x:Name="tbStatus" Text="Готов"/>
+            </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right">
+                <TextBlock x:Name="tbConnectionStatus" 
+                          Text="Не подключено"/>
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
+</Window>

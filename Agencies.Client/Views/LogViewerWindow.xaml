@@ -1,0 +1,115 @@
+﻿<Window x:Class="Agencies.Client.Views.LogViewerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:Agencies.Client.Views"
+        Title="Просмотр логов" 
+        Height="600" 
+        Width="800"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <ToolBar Grid.Row="0">
+            <Button Content="Обновить" Click="BtnRefresh_Click"/>
+            <Button Content="Очистить" Click="BtnClear_Click"/>
+            <Button Content="Сохранить в файл" Click="BtnSave_Click"/>
+            <Separator/>
+            <ComboBox x:Name="cbLogLevel" 
+                      SelectedIndex="0"
+                      Width="100">
+                <ComboBoxItem Content="Все"/>
+                <ComboBoxItem Content="Ошибки"/>
+                <ComboBoxItem Content="Предупреждения"/>
+                <ComboBoxItem Content="Информация"/>
+            </ComboBox>
+            <TextBox x:Name="txtSearch" 
+                     Width="200" 
+                     Margin="5,0"
+                     TextChanged="TxtSearch_TextChanged"/>
+        </ToolBar>
+
+        <!-- Log List -->
+        <ListView Grid.Row="1" 
+                  x:Name="lvLogs"
+                  ItemsSource="{Binding LogEntries}">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Время" 
+                                    DisplayMemberBinding="{Binding Timestamp, StringFormat=HH:mm:ss}"
+                                    Width="80"/>
+                    <GridViewColumn Header="Уровень" 
+                                    Width="100">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Level}"
+                                           FontWeight="Bold">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Level}" Value="Error">
+                                                    <Setter Property="Foreground" Value="Red"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Level}" Value="ERROR">
+                                                    <Setter Property="Foreground" Value="Red"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Level}" Value="Ошибка">
+                                                    <Setter Property="Foreground" Value="Red"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Level}" Value="Warning">
+                                                    <Setter Property="Foreground" Value="Orange"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Level}" Value="WARNING">
+                                                    <Setter Property="Foreground" Value="Orange"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Level}" Value="Предупреждение">
+                                                    <Setter Property="Foreground" Value="Orange"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Level}" Value="Info">
+                                                    <Setter Property="Foreground" Value="Blue"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Level}" Value="INFO">
+                                                    <Setter Property="Foreground" Value="Blue"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Level}" Value="Информация">
+                                                    <Setter Property="Foreground" Value="Blue"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Level}" Value="Debug">
+                                                    <Setter Property="Foreground" Value="Green"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Level}" Value="DEBUG">
+                                                    <Setter Property="Foreground" Value="Green"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Level}" Value="Отладка">
+                                                    <Setter Property="Foreground" Value="Green"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Сообщение" 
+                                    DisplayMemberBinding="{Binding Message}"
+                                    Width="400"/>
+                    <GridViewColumn Header="Источник" 
+                                    DisplayMemberBinding="{Binding Source}"
+                                    Width="150"/>
+                </GridView>
+            </ListView.View>
+        </ListView>
+
+        <!-- Status Bar -->
+        <StatusBar Grid.Row="2">
+            <StatusBarItem>
+                <TextBlock x:Name="tbStatus"/>
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
+</Window>

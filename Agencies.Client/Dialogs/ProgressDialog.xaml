@@ -1,0 +1,36 @@
+﻿<Window x:Class="Agencies.Client.Dialogs.ProgressDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Загрузка данных" 
+        Height="150" 
+        Width="400"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False">
+    <Grid Margin="15">
+        <StackPanel>
+            <TextBlock x:Name="tbMessage" 
+                       Text="Загрузка данных..." 
+                       Margin="0,0,0,10"/>
+
+            <ProgressBar x:Name="pbProgress" 
+                         Height="20" 
+                         IsIndeterminate="True"
+                         Margin="0,0,0,10"/>
+
+            <TextBlock x:Name="tbDetails" 
+                       Text="" 
+                       FontSize="11" 
+                       Foreground="Gray"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,10"/>
+
+            <Button x:Name="btnCancel" 
+                    Content="Отмена" 
+                    Width="80" 
+                    Height="25"
+                    HorizontalAlignment="Right"
+                    Click="BtnCancel_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

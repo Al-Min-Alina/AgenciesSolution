@@ -1,0 +1,13 @@
+D:\AgenciesSolution\Agencies.Client\obj\Debug\net8.0-windows\AgenciesClient.csproj.AssemblyReference.cache
+D:\AgenciesSolution\Agencies.Client\obj\Debug\net8.0-windows\Dialogs\DealDialog.baml
+D:\AgenciesSolution\Agencies.Client\obj\Debug\net8.0-windows\LoginWindow.baml
+D:\AgenciesSolution\Agencies.Client\obj\Debug\net8.0-windows\PropertyDialog.baml
+D:\AgenciesSolution\Agencies.Client\obj\Debug\net8.0-windows\Dialogs\DealDialog.g.cs
+D:\AgenciesSolution\Agencies.Client\obj\Debug\net8.0-windows\LoginWindow.g.cs
+D:\AgenciesSolution\Agencies.Client\obj\Debug\net8.0-windows\MainWindow.g.cs
+D:\AgenciesSolution\Agencies.Client\obj\Debug\net8.0-windows\PropertyDialog.g.cs
+D:\AgenciesSolution\Agencies.Client\obj\Debug\net8.0-windows\App.g.cs
+D:\AgenciesSolution\Agencies.Client\obj\Debug\net8.0-windows\AgenciesClient_MarkupCompile.cache
+D:\AgenciesSolution\Agencies.Client\obj\Debug\net8.0-windows\AgenciesClient_MarkupCompile.lref
+D:\AgenciesSolution\Agencies.Client\obj\Debug\net8.0-windows\Dialogs\ClientDialog.g.cs
+D:\AgenciesSolution\Agencies.Client\obj\Debug\net8.0-windows\GeneratedInternalTypeHelper.g.cs

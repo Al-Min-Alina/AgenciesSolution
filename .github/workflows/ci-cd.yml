@@ -1,0 +1,74 @@
+﻿name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  SQL_IMAGE: mcr.microsoft.com/mssql/server:2022-latest
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    services:
+      sql-server:
+        image: ${{ env.SQL_IMAGE }}
+        env:
+          SA_PASSWORD: "TestPassword123!"
+          ACCEPT_EULA: "Y"
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P TestPassword123! -Q 'SELECT 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+    
+    - name: Run tests
+      run: dotnet test --no-build --configuration Release --verbosity normal
+
+  deploy:
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Publish API
+      run: |
+        mkdir -p publish
+        dotnet publish Agencies.API/Agencies.API.csproj \
+          -c Release \
+          -o ./publish \
+          --verbosity normal
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: agencies-api
+        path: ./publish
+        retention-days: 7

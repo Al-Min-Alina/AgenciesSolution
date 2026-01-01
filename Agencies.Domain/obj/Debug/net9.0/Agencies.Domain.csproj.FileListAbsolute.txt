@@ -1,0 +1,15 @@
+D:\AgenciesSolution\Agencies.Domain\bin\Debug\net9.0\Agencies.Domain.deps.json
+D:\AgenciesSolution\Agencies.Domain\bin\Debug\net9.0\Agencies.Domain.dll
+D:\AgenciesSolution\Agencies.Domain\bin\Debug\net9.0\Agencies.Domain.pdb
+D:\AgenciesSolution\Agencies.Domain\bin\Debug\net9.0\Agencies.Core.dll
+D:\AgenciesSolution\Agencies.Domain\bin\Debug\net9.0\Agencies.Core.pdb
+D:\AgenciesSolution\Agencies.Domain\obj\Debug\net9.0\Agencies.Domain.csproj.AssemblyReference.cache
+D:\AgenciesSolution\Agencies.Domain\obj\Debug\net9.0\Agencies.Domain.GeneratedMSBuildEditorConfig.editorconfig
+D:\AgenciesSolution\Agencies.Domain\obj\Debug\net9.0\Agencies.Domain.AssemblyInfoInputs.cache
+D:\AgenciesSolution\Agencies.Domain\obj\Debug\net9.0\Agencies.Domain.AssemblyInfo.cs
+D:\AgenciesSolution\Agencies.Domain\obj\Debug\net9.0\Agencies.Domain.csproj.CoreCompileInputs.cache
+D:\AgenciesSolution\Agencies.Domain\obj\Debug\net9.0\Agencies.3DDC9844.Up2Date
+D:\AgenciesSolution\Agencies.Domain\obj\Debug\net9.0\Agencies.Domain.dll
+D:\AgenciesSolution\Agencies.Domain\obj\Debug\net9.0\refint\Agencies.Domain.dll
+D:\AgenciesSolution\Agencies.Domain\obj\Debug\net9.0\Agencies.Domain.pdb
+D:\AgenciesSolution\Agencies.Domain\obj\Debug\net9.0\ref\Agencies.Domain.dll

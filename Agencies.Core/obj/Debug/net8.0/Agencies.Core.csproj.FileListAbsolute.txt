@@ -1,0 +1,15 @@
+D:\AgenciesSolution\Agencies.Core\bin\Debug\net8.0\Agencies.Core.deps.json
+D:\AgenciesSolution\Agencies.Core\bin\Debug\net8.0\Agencies.Core.runtimeconfig.json
+D:\AgenciesSolution\Agencies.Core\bin\Debug\net8.0\Agencies.Core.dll
+D:\AgenciesSolution\Agencies.Core\bin\Debug\net8.0\Agencies.Core.pdb
+D:\AgenciesSolution\Agencies.Core\obj\Debug\net8.0\Agencies.Core.csproj.AssemblyReference.cache
+D:\AgenciesSolution\Agencies.Core\obj\Debug\net8.0\Agencies.Core.GeneratedMSBuildEditorConfig.editorconfig
+D:\AgenciesSolution\Agencies.Core\obj\Debug\net8.0\Agencies.Core.AssemblyInfoInputs.cache
+D:\AgenciesSolution\Agencies.Core\obj\Debug\net8.0\Agencies.Core.AssemblyInfo.cs
+D:\AgenciesSolution\Agencies.Core\obj\Debug\net8.0\Agencies.Core.csproj.CoreCompileInputs.cache
+D:\AgenciesSolution\Agencies.Core\obj\Debug\net8.0\Agencies.Core.dll
+D:\AgenciesSolution\Agencies.Core\obj\Debug\net8.0\refint\Agencies.Core.dll
+D:\AgenciesSolution\Agencies.Core\obj\Debug\net8.0\Agencies.Core.pdb
+D:\AgenciesSolution\Agencies.Core\obj\Debug\net8.0\Agencies.Core.genruntimeconfig.cache
+D:\AgenciesSolution\Agencies.Core\obj\Debug\net8.0\ref\Agencies.Core.dll
+D:\AgenciesSolution\Agencies.Core\obj\Debug\net8.0\Agencies.Core.sourcelink.json
