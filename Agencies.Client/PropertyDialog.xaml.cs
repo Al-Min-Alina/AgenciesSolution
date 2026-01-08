@@ -3,6 +3,8 @@ using Newtonsoft.Json;
 using System;
 using System.Net.Http.Headers;
 using System.Net.Http;
+using System.Threading.Tasks;
+using System.Threading;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -154,159 +156,154 @@ namespace Agencies.Client
 
         private async Task<bool> SaveToServer()
         {
-            Console.WriteLine($"=== SaveToServer() ВЫЗВАН (IsUpdate={IsUpdate}, _propertyId={_propertyId}) ===");
+            Console.WriteLine($"=== SaveToServer() ВЫЗВАН (IsUpdate={IsUpdate}) ===");
+
+            //// Подробная проверка авторизации
+            //Console.WriteLine($"[SaveToServer] Проверка App.IsAuthenticated()...");
+            //var isAuth = App.IsAuthenticated();
+            //Console.WriteLine($"[SaveToServer] App.IsAuthenticated() вернул: {isAuth}");
+
+            //if (!isAuth)
+            //{
+            //    MessageBox.Show("Вы не авторизованы. Пожалуйста, войдите в систему.",
+            //        "Ошибка авторизации", MessageBoxButton.OK, MessageBoxImage.Warning);
+            //    return false;
+            //}
+
+            //// Проверяем токен в ApiService (используем App.ApiService)
+            //Console.WriteLine($"[SaveToServer] Проверка токена в ApiService...");
+            //var tokenStatus = App.ApiService.GetTokenStatus();
+            //Console.WriteLine($"[SaveToServer] Статус токена: {tokenStatus}");
+
+            //if (!App.ApiService.HasToken())
+            //{
+            //    MessageBox.Show("Токен авторизации не установлен. Пожалуйста, войдите снова.",
+            //        "Ошибка авторизации", MessageBoxButton.OK, MessageBoxImage.Warning);
+
+            //    // Пробуем восстановить токен из настроек
+            //    Console.WriteLine($"[SaveToServer] Попытка восстановить токен из настроек...");
+            //    var savedToken = Settings.Default.AuthToken;
+            //    if (!string.IsNullOrEmpty(savedToken))
+            //    {
+            //        Console.WriteLine($"[SaveToServer] Восстанавливаем токен...");
+            //        App.ApiService.SetToken(savedToken);
+            //    }
+            //    else
+            //    {
+            //        Console.WriteLine($"[SaveToServer] Токен не найден в настройках");
+            //        return false;
+            //    }
+            //}
+
             try
             {
-                // ИСПОЛЬЗУЙТЕ InvariantCulture для парсинга чисел с запятой
                 var culture = System.Globalization.CultureInfo.InvariantCulture;
 
-                using (var client = new HttpClient())
+                if (IsUpdate)
                 {
-                    client.BaseAddress = new Uri("https://localhost:7149/");
-
-                    client.DefaultRequestHeaders.Authorization =
-                        new AuthenticationHeaderValue("Bearer", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiI3IiwidW5pcXVlX25hbWUiOiJBbGluYSIsImVtYWlsIjoiQWxpbmFAYmsucnUiLCJyb2xlIjoiQWRtaW4iLCJSb2xlIjoiQWRtaW4iLCJuYmYiOjE3NjcyNzc5NTcsImV4cCI6MTc2NzI4NTE1NywiaWF0IjoxNzY3Mjc3OTU3LCJpc3MiOiJBZ2VuY2llc0FQSV9EZXYiLCJhdWQiOiJBZ2VuY2llc0NsaWVudF9EZXYifQ.lliBzsncLqYSVOWWyCpd6MJVvfFgOrLtfW1QLbE4LWE");
-
-                    client.DefaultRequestHeaders.Accept.Add(
-                        new MediaTypeWithQualityHeaderValue("application/json"));
-
-                    // УВЕЛИЧЬТЕ ТАЙМАУТ
-                    client.Timeout = TimeSpan.FromSeconds(30);
-
-                    if (IsUpdate)
+                    var updateRequest = new UpdatePropertyRequest
                     {
-                        // ИСПРАВЬТЕ ПАРСИНГ ЧИСЕЛ
-                        var updateRequest = new UpdatePropertyRequest
-                        {
-                            Title = txtTitle.Text,
-                            Description = txtDescription.Text,
-                            Address = txtAddress.Text,
-                            // ИСПОЛЬЗУЙТЕ InvariantCulture ДЛЯ ПАРСИНГА
-                            Price = double.Parse(txtPrice.Text.Replace(",", "."), culture),
-                            // ЗАМЕНИТЕ ЗАПЯТУЮ НА ТОЧКУ
-                            Area = double.Parse(txtArea.Text.Replace(",", "."), culture),
-                            Type = (cbType.SelectedItem as ComboBoxItem)?.Content.ToString(),
-                            Rooms = int.Parse(txtRooms.Text),
-                            IsAvailable = cbIsAvailable.IsChecked ?? true
-                        };
+                        Title = txtTitle.Text.Trim(),
+                        Description = txtDescription.Text.Trim(),
+                        Address = txtAddress.Text.Trim(),
+                        Price = double.Parse(txtPrice.Text.Replace(",", "."), culture),
+                        Area = double.Parse(txtArea.Text.Replace(",", "."), culture),
+                        Type = (cbType.SelectedItem as ComboBoxItem)?.Content.ToString(),
+                        Rooms = int.Parse(txtRooms.Text),
+                        IsAvailable = cbIsAvailable.IsChecked ?? true
+                    };
 
-                        // ЛОГИРУЙТЕ ДЛЯ ДИАГНОСТИКИ
-                        Console.WriteLine($"=== CLIENT: Update Request ===");
-                        Console.WriteLine($"Title: {updateRequest.Title}");
-                        Console.WriteLine($"Price: {updateRequest.Price}");
-                        Console.WriteLine($"Area: {updateRequest.Area}");
-                        Console.WriteLine($"Rooms: {updateRequest.Rooms}");
-                        Console.WriteLine($"Type: {updateRequest.Type}");
+                    Console.WriteLine($"Обновление объекта ID: {_propertyId}");
 
-                        string json = JsonConvert.SerializeObject(updateRequest);
-                        Console.WriteLine($"JSON: {json}");
+                    // Проверка подключения перед отправкой
+                    //var isConnected = await App.ApiService.CheckConnectionAsync();
+                    //if (!isConnected)
+                    //{
+                    //    MessageBox.Show("Нет подключения к серверу. Проверьте сетевое подключение.",
+                    //        "Ошибка сети", MessageBoxButton.OK, MessageBoxImage.Error);
+                    //    return false;
+                    //}
 
-                        var content = new StringContent(json, Encoding.UTF8, "application/json");
+                    var result = await App.ApiService.UpdatePropertyAsync(_propertyId, updateRequest);
 
-                        // ПРОВЕРЬТЕ, ЧТО ОТПРАВЛЯЕТСЯ
-                        var contentString = await content.ReadAsStringAsync();
-                        Console.WriteLine($"Content to send: {contentString}");
-                        Console.WriteLine($"Content length: {contentString.Length}");
-
-                        var response = await client.PutAsync($"api/properties/{_propertyId}", content);
-
-                        // ПРОЧИТАЙТЕ ОТВЕТ ДАЖЕ ПРИ ОШИБКЕ
-                        var responseContent = await response.Content.ReadAsStringAsync();
-                        Console.WriteLine($"Response Status: {(int)response.StatusCode} ({response.StatusCode})");
-                        Console.WriteLine($"Response Content: {responseContent}");
-
-                        if (!response.IsSuccessStatusCode)
-                        {
-                            // ПОКАЖИТЕ ПОЛЬЗОВАТЕЛЮ, ЧТО НА САМОМ ДЕЛЕ ВЕРНУЛ СЕРВЕР
-                            try
-                            {
-                                var errorObj = JsonConvert.DeserializeObject<dynamic>(responseContent);
-                                if (errorObj != null && errorObj.Message != null)
-                                {
-                                    MessageBox.Show($"Ошибка сервера: {errorObj.Message}",
-                                        "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-                                }
-                                else if (errorObj != null && errorObj.errors != null)
-                                {
-                                    // Если есть ошибки валидации
-                                    var errors = new StringBuilder();
-                                    foreach (var error in errorObj.errors)
-                                    {
-                                        errors.AppendLine($"{error.Name}: {string.Join(", ", error.Errors.ToObject<string[]>())}");
-                                    }
-                                    MessageBox.Show($"Ошибки валидации:\n{errors}",
-                                        "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-                                }
-                            }
-                            catch
-                            {
-                                MessageBox.Show($"Ошибка обновления: {response.StatusCode}\n{responseContent}",
-                                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-                            }
-                        }
-
-                        return response.IsSuccessStatusCode;
-                    }
-                    else
+                    if (result != null)
                     {
-                        // ТО ЖЕ САМОЕ ДЛЯ СОЗДАНИЯ
-                        var createRequest = new CreatePropertyRequest
-                        {
-                            Title = txtTitle.Text,
-                            Description = txtDescription.Text,
-                            Address = txtAddress.Text,
-                            Price = double.Parse(txtPrice.Text.Replace(",", "."), culture),
-                            Area = double.Parse(txtArea.Text.Replace(",", "."), culture),
-                            Type = (cbType.SelectedItem as ComboBoxItem)?.Content.ToString(),
-                            Rooms = int.Parse(txtRooms.Text),
-                            IsAvailable = cbIsAvailable.IsChecked ?? true
-                        };
-
-                        Console.WriteLine($"=== CLIENT: Create Request ===");
-                        Console.WriteLine($"Title: {createRequest.Title}");
-                        Console.WriteLine($"Area: {createRequest.Area}");
-
-                        string json = JsonConvert.SerializeObject(createRequest);
-                        var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                        var response = await client.PostAsync("api/properties", content);
-
-                        // ТАКЖЕ ПРОЧИТАЙТЕ ОТВЕТ
-                        var responseContent = await response.Content.ReadAsStringAsync();
-                        Console.WriteLine($"Response Status: {(int)response.StatusCode} ({response.StatusCode})");
-                        Console.WriteLine($"Response Content: {responseContent}");
-
-                        if (!response.IsSuccessStatusCode)
-                        {
-                            MessageBox.Show($"Ошибка создания: {response.StatusCode}\n{responseContent}",
-                                "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-                        }
-
-                        return response.IsSuccessStatusCode;
+                        Console.WriteLine($"Объект успешно обновлен, ID: {result.Id}");
+                        return true;
                     }
                 }
+                else
+                {
+                    var createRequest = new CreatePropertyRequest
+                    {
+                        Title = txtTitle.Text.Trim(),
+                        Description = txtDescription.Text.Trim(),
+                        Address = txtAddress.Text.Trim(),
+                        Price = double.Parse(txtPrice.Text.Replace(",", "."), culture),
+                        Area = double.Parse(txtArea.Text.Replace(",", "."), culture),
+                        Type = (cbType.SelectedItem as ComboBoxItem)?.Content.ToString(),
+                        Rooms = int.Parse(txtRooms.Text),
+                        IsAvailable = cbIsAvailable.IsChecked ?? true
+                    };
+
+                    Console.WriteLine($"Создание нового объекта");
+
+                    // Проверка подключения перед отправкой
+                    //var isConnected = await App.ApiService.CheckConnectionAsync();
+                    //if (!isConnected)
+                    //{
+                    //    MessageBox.Show("Нет подключения к серверу. Проверьте сетевое подключение.",
+                    //        "Ошибка сети", MessageBoxButton.OK, MessageBoxImage.Error);
+                    //    return false;
+                    //}
+
+                    var result = await App.ApiService.CreatePropertyAsync(createRequest);
+
+                    if (result != null)
+                    {
+                        Console.WriteLine($"Объект успешно создан, ID: {result.Id}");
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+            catch (System.Net.Http.HttpRequestException httpEx)
+                when (httpEx.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                // Токен истек
+                App.ClearSession();
+
+                MessageBox.Show("Сессия истекла. Пожалуйста, войдите снова.",
+                    "Сессия истекла", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+            catch (System.Net.Http.HttpRequestException httpEx)
+                when (httpEx.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
+                MessageBox.Show("У вас недостаточно прав для выполнения этой операции.",
+                    "Доступ запрещен", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+            catch (System.Net.Http.HttpRequestException httpEx)
+            {
+                // Общая ошибка сети
+                Console.WriteLine($"Ошибка сети: {httpEx}");
+                MessageBox.Show($"Ошибка подключения к серверу: {httpEx.Message}",
+                    "Ошибка сети", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"=== SaveToServer ИСКЛЮЧЕНИЕ: {ex} ===");
-                // ПОДРОБНОЕ СООБЩЕНИЕ ОБ ОШИБКЕ
-                MessageBox.Show($"Ошибка при сохранении на сервере:\n\n" +
-                               $"Тип: {ex.GetType().Name}\n" +
-                               $"Сообщение: {ex.Message}\n" +
-                               $"Внутренняя ошибка: {ex.InnerException?.Message}",
-                    "Ошибка сети", MessageBoxButton.OK, MessageBoxImage.Error);
-
-                // ЛОГИРУЙТЕ ДЛЯ ДИАГНОСТИКИ
-                Console.WriteLine($"=== CLIENT EXCEPTION ===");
-                Console.WriteLine(ex.ToString());
-
+                Console.WriteLine($"Ошибка при сохранении: {ex}");
+                MessageBox.Show($"Ошибка при сохранении: {ex.Message}",
+                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
         }
 
         private bool ValidateInput()
         {
-            // ИСПОЛЬЗУЙТЕ ТОТ ЖЕ ПОДХОД К ПАРСИНГУ
             var culture = System.Globalization.CultureInfo.InvariantCulture;
 
             if (string.IsNullOrWhiteSpace(txtTitle.Text))
@@ -325,9 +322,8 @@ namespace Agencies.Client
                 return false;
             }
 
-            // ИСПРАВЬТЕ ПАРСИНГ ЦЕНЫ
-            if (!decimal.TryParse(txtPrice.Text.Replace(",", "."),
-                System.Globalization.NumberStyles.Any, culture, out decimal price) || price <= 0)
+            if (!double.TryParse(txtPrice.Text.Replace(",", "."),
+                System.Globalization.NumberStyles.Any, culture, out double price) || price <= 0)
             {
                 MessageBox.Show("Введите корректную цену", "Ошибка",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -335,7 +331,6 @@ namespace Agencies.Client
                 return false;
             }
 
-            // ИСПРАВЬТЕ ПАРСИНГ ПЛОЩАДИ
             if (!double.TryParse(txtArea.Text.Replace(",", "."),
                 System.Globalization.NumberStyles.Any, culture, out double area) || area <= 0)
             {

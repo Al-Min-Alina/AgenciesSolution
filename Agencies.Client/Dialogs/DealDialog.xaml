@@ -28,41 +28,58 @@
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <!-- Property Selection -->
                 <TextBlock Text="Объект недвижимости:" Margin="0,0,0,5"/>
                 <ComboBox x:Name="cbProperty" 
-                          ItemsSource="{Binding Properties}"
-                          SelectedValuePath="Id"
-                          SelectedValue="{Binding Deal.PropertyId}"
-                          Height="30" 
-                          Margin="0,0,0,10">
+          ItemsSource="{Binding Properties}"
+          SelectedValuePath="Id"
+          SelectedValue="{Binding PropertyId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+          Height="30" 
+          Margin="0,0,0,10">
                     <ComboBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel>
                                 <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
                                 <TextBlock Text="{Binding Address}" FontSize="11" Foreground="Gray"/>
-                                <TextBlock Text="{Binding Price, StringFormat=C}" FontSize="11"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Price, StringFormat=$\{0:N2\}}" FontSize="11"/>
+                                    <TextBlock Text=" • " FontSize="11" Foreground="Gray"/>
+                                    <TextBlock Text="{Binding Area}" FontSize="11"/>
+                                    <TextBlock Text=" м² • " FontSize="11" Foreground="Gray"/>
+                                    <TextBlock FontSize="11">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="Доступно: Да"/>
+                                                <Setter Property="Foreground" Value="Green"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsAvailable}" Value="False">
+                                                        <Setter Property="Text" Value="Доступно: Нет"/>
+                                                        <Setter Property="Foreground" Value="Red"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
                             </StackPanel>
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
 
-                <!-- Client Selection -->
                 <TextBlock Text="Клиент:" Margin="0,0,0,5"/>
                 <ComboBox x:Name="cbClient" 
-                          ItemsSource="{Binding Clients}"
-                          DisplayMemberPath="FullName"
-                          SelectedValuePath="Id"
-                          SelectedValue="{Binding Deal.ClientId}"
-                          Height="30" 
-                          Margin="0,0,0,10"/>
+          ItemsSource="{Binding Clients}"
+          DisplayMemberPath="FullName"
+          SelectedValuePath="Id"
+          SelectedValue="{Binding ClientId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+          Height="30" 
+          Margin="0,0,0,10"/>
 
                 <!-- Deal Amount -->
                 <TextBlock Text="Сумма сделки:" Margin="0,0,0,5"/>
                 <TextBox x:Name="txtDealAmount" 
-                         Text="{Binding Deal.DealAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
-                         Height="30" 
-                         Margin="0,0,0,10"/>
+         Text="{Binding DealAmount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+         Height="30" 
+         Margin="0,0,0,10"/>
 
                 <!-- Deal Date -->
                 <TextBlock Text="Дата сделки:" Margin="0,0,0,5"/>
@@ -74,10 +91,9 @@
                 <!-- Status -->
                 <TextBlock Text="Статус:" Margin="0,0,0,5"/>
                 <ComboBox x:Name="cbStatus" 
-                          ItemsSource="{Binding Statuses}"
-                          SelectedItem="{Binding Deal.Status}"
-                          Height="30" 
-                          Margin="0,0,0,10"/>
+      ItemsSource="{Binding Statuses}"
+      SelectedItem="{Binding Status, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+      Height="30" Margin="0,0,0,10"/>
 
                 <!-- Agent Selection (only for Admin) -->
                 <TextBlock x:Name="tbAgentLabel" 
@@ -95,33 +111,33 @@
 
                 <!-- Property Info -->
                 <Border BorderBrush="LightGray" 
-                        BorderThickness="1" 
-                        Padding="10"
-                        Margin="0,10,0,10"
-                        Background="#F5F5F5">
+        BorderThickness="1" 
+        Padding="10"
+        Margin="0,10,0,10"
+        Background="#F5F5F5">
                     <StackPanel>
                         <TextBlock Text="Информация об объекте:" 
-                                   FontWeight="Bold" 
-                                   Margin="0,0,0,5"/>
+                   FontWeight="Bold" 
+                   Margin="0,0,0,5"/>
                         <TextBlock x:Name="tbPropertyInfo" 
-                                   Text="{Binding SelectedPropertyInfo}"
-                                   TextWrapping="Wrap"/>
+                   Text="{Binding SelectedPropertyInfo, UpdateSourceTrigger=PropertyChanged}"
+                   TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
 
                 <!-- Client Info -->
                 <Border BorderBrush="LightGray" 
-                        BorderThickness="1" 
-                        Padding="10"
-                        Margin="0,0,0,10"
-                        Background="#F5F5F5">
+        BorderThickness="1" 
+        Padding="10"
+        Margin="0,0,0,10"
+        Background="#F5F5F5">
                     <StackPanel>
                         <TextBlock Text="Информация о клиенте:" 
-                                   FontWeight="Bold" 
-                                   Margin="0,0,0,5"/>
+                   FontWeight="Bold" 
+                   Margin="0,0,0,5"/>
                         <TextBlock x:Name="tbClientInfo" 
-                                   Text="{Binding SelectedClientInfo}"
-                                   TextWrapping="Wrap"/>
+                   Text="{Binding SelectedClientInfo, UpdateSourceTrigger=PropertyChanged}"
+                   TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
 

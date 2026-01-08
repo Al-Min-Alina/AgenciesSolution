@@ -1,0 +1,5 @@
+[09:59:59.719] POST /api/auth/login RemoteIP:127.0.0.1 UserAgent: BodySize:40
+[10:00:22.735] POST /api/properties RemoteIP:127.0.0.1 UserAgent: BodySize:119
+[10:03:47.678] POST /api/Properties RemoteIP:::1 UserAgent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 YaBrowser/25.12.0.0 Safari/537.36 BodySize:159
+[10:04:26.465] POST /api/Auth/login RemoteIP:::1 UserAgent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 YaBrowser/25.12.0.0 Safari/537.36 BodySize:49
+[10:04:58.460] POST /api/Properties RemoteIP:::1 UserAgent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 YaBrowser/25.12.0.0 Safari/537.36 BodySize:159

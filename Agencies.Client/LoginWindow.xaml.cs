@@ -12,17 +12,41 @@ namespace Agencies.Client
         private readonly ApiService _apiService;
         public LoginResponse CurrentUser { get; private set; }
 
+        public LoginWindow()
+        {
+            InitializeComponent();
+
+            // ВАЖНО: Инициализируем _apiService
+            _apiService = App.ApiService; // Используем статическое свойство из App.xaml.cs
+
+            if (_apiService == null)
+            {
+                MessageBox.Show("Ошибка инициализации ApiService. Приложение будет закрыто.",
+                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                Application.Current.Shutdown();
+                return;
+            }
+
+            Loaded += (s, e) => txtUsername.Focus();
+        }
+
         public LoginWindow(ApiService apiService)
         {
             InitializeComponent();
-            _apiService = apiService;
 
-            // Фокус на поле ввода при загрузке окна
+            _apiService = apiService ?? throw new ArgumentNullException(nameof(apiService));
+
             Loaded += (s, e) => txtUsername.Focus();
         }
 
         private async void BtnLogin_Click(object sender, RoutedEventArgs e)
         {
+            if (_apiService == null)
+            {
+                ShowError("Ошибка инициализации сервиса. Перезапустите приложение.");
+                return;
+            }
+
             var username = txtUsername.Text.Trim();
             var password = txtPassword.Password;
 
@@ -51,6 +75,7 @@ namespace Agencies.Client
                 {
                     CurrentUser = response;
                     _apiService.SetToken(response.Token);
+                    App.SaveSession(response.Token, response.Username, response.Role);
                     DialogResult = true;
                     Close();
                 }
@@ -86,7 +111,6 @@ namespace Agencies.Client
 
         private string GetUserFriendlyErrorMessage(Exception ex)
         {
-            // Упрощаем сообщение об ошибке для пользователя
             var baseEx = ex.GetBaseException();
 
             if (baseEx is HttpRequestException httpEx)

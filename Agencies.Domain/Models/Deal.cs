@@ -15,7 +15,7 @@ namespace Agencies.Domain.Models
         public Client Client { get; set; }
         public double DealAmount { get; set; }
         public DateTime DealDate { get; set; }
-        public string Status { get; set; } // "Pending", "Completed", "Cancelled"
+        public string Status { get; set; } // "В ожидании", "Завершено", "Отменено"
         public int AgentId { get; set; }
         public User Agent { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;

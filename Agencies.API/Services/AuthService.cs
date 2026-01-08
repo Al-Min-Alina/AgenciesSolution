@@ -83,7 +83,7 @@ namespace Agencies.API.Services
                     new Claim(ClaimTypes.Name, user.Username),
                     new Claim(ClaimTypes.Email, user.Email),
                     new Claim(ClaimTypes.Role, user.Role),
-                    new Claim("Role", user.Role)
+                    //new Claim("Role", user.Role)
                 }),
                 Expires = DateTime.UtcNow.AddMinutes(
                     double.Parse(_configuration["JwtSettings:ExpiryMinutes"])),
@@ -99,8 +99,6 @@ namespace Agencies.API.Services
 
         private string HashPassword(string password)
         {
-            // In production, use proper password hashing like BCrypt or Argon2
-            // This is simplified for demonstration
             using var sha256 = System.Security.Cryptography.SHA256.Create();
             var bytes = Encoding.UTF8.GetBytes(password + "salt");
             var hash = sha256.ComputeHash(bytes);

@@ -14,7 +14,7 @@ namespace Agencies.Domain.Models
         public string Address { get; set; }
         public double Price { get; set; }
         public double Area { get; set; }
-        public string Type { get; set; } // "Apartment", "House", "Commercial"
+        public string Type { get; set; }
         public int Rooms { get; set; }
         public bool IsAvailable { get; set; }
         public DateTime CreatedAt { get; set; }

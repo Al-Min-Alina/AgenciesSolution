@@ -7,8 +7,8 @@
         xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         mc:Ignorable="d"
         Title="Отчеты и статистика" 
-        Height="800" 
-        Width="1200"
+        Height="850" 
+        Width="1300"
         WindowStartupLocation="CenterOwner">
 
     <Window.Resources>
@@ -23,6 +23,59 @@
             <Setter Property="Padding" Value="10,5"/>
             <Setter Property="Margin" Value="5"/>
         </Style>
+
+        <!-- Стили для графиков -->
+        <Style TargetType="Border">
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#e0e0e0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12"/>
+            <Setter Property="Margin" Value="8"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect ShadowDepth="2" 
+                                      Opacity="0.1" 
+                                      BlurRadius="8"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="TextBlock" x:Key="ChartTitle">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#2c3e50"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+        <Style x:Key="CenterAlign" TargetType="TextBlock">
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="2"/>
+        </Style>
+
+        <Style x:Key="RightAlign" TargetType="TextBlock">
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="2"/>
+        </Style>
+
+        <Style TargetType="DataGrid">
+            <Setter Property="BorderBrush" Value="#e0e0e0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="RowBackground" Value="White"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#f0f0f0"/>
+            <Setter Property="VerticalGridLinesBrush" Value="#f0f0f0"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="SelectionUnit" Value="FullRow"/>
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#2c3e50"/>
+            <Setter Property="Background" Value="#f8f9fa"/>
+            <Setter Property="Padding" Value="8,6"/>
+        </Style>
     </Window.Resources>
 
     <Grid>
@@ -33,7 +86,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="#2c3e50" Padding="10">
+        <Border Grid.Row="0" Background="#2c3e50" Padding="12" CornerRadius="0">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="📊 Отчеты и аналитика" 
                           Foreground="White" 
@@ -47,7 +100,8 @@
                     <DatePicker x:Name="dpStartDate" 
                                 SelectedDate="{Binding StartDate}"
                                 Width="120" 
-                                Margin="5,0"/>
+                                Margin="5,0"
+                                Background="White"/>
                     <TextBlock Text="по" 
                               Foreground="White" 
                               VerticalAlignment="Center" 
@@ -55,17 +109,34 @@
                     <DatePicker x:Name="dpEndDate" 
                                 SelectedDate="{Binding EndDate}"
                                 Width="120" 
-                                Margin="5,0"/>
-
+                                Margin="5,0"
+                                Background="White"/>
+                    <ComboBox x:Name="cbDateRange" 
+                              Width="120" 
+                              Margin="10,0,0,0"
+                              Background="White"
+                              SelectedIndex="1"
+                              SelectionChanged="CbDateRange_SelectionChanged">
+                        <ComboBoxItem Content="За неделю" Tag="week"/>
+                        <ComboBoxItem Content="За месяц" Tag="month"/>
+                        <ComboBoxItem Content="За квартал" Tag="quarter"/>
+                        <ComboBoxItem Content="За год" Tag="year"/>
+                    </ComboBox>
                     <Button x:Name="btnGenerateAll" 
                             Content="Сгенерировать все" 
-                            Click="BtnGenerateAll_Click"/>
+                            Click="BtnGenerateAll_Click"
+                            Background="#3498db"
+                            Foreground="White"/>
                     <Button x:Name="btnExport" 
                             Content="Экспорт в PDF" 
-                            Click="BtnExport_Click"/>
+                            Click="BtnExport_Click"
+                            Background="#27ae60"
+                            Foreground="White"/>
                     <Button x:Name="btnPrint" 
                             Content="Печать" 
-                            Click="BtnPrint_Click"/>
+                            Click="BtnPrint_Click"
+                            Background="#7f8c8d"
+                            Foreground="White"/>
                 </StackPanel>
             </StackPanel>
         </Border>
@@ -73,114 +144,130 @@
         <!-- Main Content -->
         <TabControl Grid.Row="1" Margin="10">
             <!-- Sales Report Tab -->
-            <TabItem Header="Отчет по продажам">
+            <TabItem Header="📈 Отчет по продажам">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
-                        <Button Content="Обновить" 
-                                Click="BtnRefreshSales_Click"/>
-                        <Button Content="Экспорт в Excel" 
-                                Click="BtnExportSales_Click"/>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
+                        <Button Content="🔄 Обновить" 
+                                Click="BtnRefreshSales_Click"
+                                Background="#3498db"
+                                Foreground="White"/>
+                        <Button x:Name="btnExportSales" 
+        Content="Экспорт в Excel" 
+        Click="BtnExportSales_Click"
+        Background="#2ecc71"
+        Foreground="White"/>
                     </StackPanel>
 
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer Grid.Row="1" 
+                                  VerticalScrollBarVisibility="Auto"
+                                  Padding="5">
                         <StackPanel>
                             <!-- Summary Cards -->
-                            <WrapPanel Margin="0,0,0,20">
-                                <Border BorderBrush="#3498db" 
-                                        BorderThickness="1" 
-                                        CornerRadius="5"
-                                        Width="200" 
-                                        Height="100" 
-                                        Margin="5"
-                                        Background="#f8f9fa">
+                            <WrapPanel Margin="0,0,0,25">
+                                <Border Width="220" 
+                                        Height="110" 
+                                        Margin="8">
+                                    <Border.Effect>
+                                        <DropShadowEffect ShadowDepth="3" 
+                                                          Opacity="0.2" 
+                                                          BlurRadius="8"/>
+                                    </Border.Effect>
                                     <StackPanel VerticalAlignment="Center" 
                                                 HorizontalAlignment="Center">
-                                        <TextBlock Text="Общая выручка" 
-                                                   FontSize="12" 
+                                        <TextBlock Text="💰 Общая выручка" 
+                                                   FontSize="13" 
                                                    Foreground="#7f8c8d"
                                                    HorizontalAlignment="Center"/>
                                         <TextBlock Text="{Binding SalesReport.TotalRevenue, StringFormat='C'}" 
                                                    FontSize="24" 
                                                    FontWeight="Bold"
                                                    Foreground="#27ae60"
-                                                   HorizontalAlignment="Center"/>
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0,5"/>
                                     </StackPanel>
                                 </Border>
 
-                                <Border BorderBrush="#3498db" 
-                                        BorderThickness="1" 
-                                        CornerRadius="5"
-                                        Width="200" 
-                                        Height="100" 
-                                        Margin="5"
-                                        Background="#f8f9fa">
+                                <Border Width="220" 
+                                        Height="110" 
+                                        Margin="8">
+                                    <Border.Effect>
+                                        <DropShadowEffect ShadowDepth="3" 
+                                                          Opacity="0.2" 
+                                                          BlurRadius="8"/>
+                                    </Border.Effect>
                                     <StackPanel VerticalAlignment="Center" 
                                                 HorizontalAlignment="Center">
-                                        <TextBlock Text="Всего сделок" 
-                                                   FontSize="12" 
+                                        <TextBlock Text="📋 Всего сделок" 
+                                                   FontSize="13" 
                                                    Foreground="#7f8c8d"
                                                    HorizontalAlignment="Center"/>
                                         <TextBlock Text="{Binding SalesReport.TotalDeals}" 
                                                    FontSize="24" 
                                                    FontWeight="Bold"
                                                    Foreground="#3498db"
-                                                   HorizontalAlignment="Center"/>
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0,5"/>
                                     </StackPanel>
                                 </Border>
 
-                                <Border BorderBrush="#3498db" 
-                                        BorderThickness="1" 
-                                        CornerRadius="5"
-                                        Width="200" 
-                                        Height="100" 
-                                        Margin="5"
-                                        Background="#f8f9fa">
+                                <Border Width="220" 
+                                        Height="110" 
+                                        Margin="8">
+                                    <Border.Effect>
+                                        <DropShadowEffect ShadowDepth="3" 
+                                                          Opacity="0.2" 
+                                                          BlurRadius="8"/>
+                                    </Border.Effect>
                                     <StackPanel VerticalAlignment="Center" 
                                                 HorizontalAlignment="Center">
-                                        <TextBlock Text="Завершено сделок" 
-                                                   FontSize="12" 
+                                        <TextBlock Text="✅ Завершено сделок" 
+                                                   FontSize="13" 
                                                    Foreground="#7f8c8d"
                                                    HorizontalAlignment="Center"/>
                                         <TextBlock Text="{Binding SalesReport.CompletedDeals}" 
                                                    FontSize="24" 
                                                    FontWeight="Bold"
                                                    Foreground="#2ecc71"
-                                                   HorizontalAlignment="Center"/>
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0,5"/>
                                     </StackPanel>
                                 </Border>
 
-                                <Border BorderBrush="#3498db" 
-                                        BorderThickness="1" 
-                                        CornerRadius="5"
-                                        Width="200" 
-                                        Height="100" 
-                                        Margin="5"
-                                        Background="#f8f9fa">
+                                <Border Width="220" 
+                                        Height="110" 
+                                        Margin="8">
+                                    <Border.Effect>
+                                        <DropShadowEffect ShadowDepth="3" 
+                                                          Opacity="0.2" 
+                                                          BlurRadius="8"/>
+                                    </Border.Effect>
                                     <StackPanel VerticalAlignment="Center" 
                                                 HorizontalAlignment="Center">
-                                        <TextBlock Text="Средняя сумма" 
-                                                   FontSize="12" 
+                                        <TextBlock Text="📊 Средняя сумма" 
+                                                   FontSize="13" 
                                                    Foreground="#7f8c8d"
                                                    HorizontalAlignment="Center"/>
                                         <TextBlock Text="{Binding SalesReport.AverageDealAmount, StringFormat='C'}" 
                                                    FontSize="24" 
                                                    FontWeight="Bold"
                                                    Foreground="#e74c3c"
-                                                   HorizontalAlignment="Center"/>
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0,5"/>
                                     </StackPanel>
                                 </Border>
                             </WrapPanel>
 
-                            <!-- Charts -->
-                            <Grid>
+                            <!-- Charts Grid -->
+                            <Grid Margin="0,10,0,20">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="300"/>
+                                    <RowDefinition Height="320"/>
+                                    <RowDefinition Height="320"/>
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -188,67 +275,105 @@
                                 </Grid.ColumnDefinitions>
 
                                 <!-- Monthly Revenue Chart -->
-                                <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
-                                        BorderBrush="#ddd" 
-                                        BorderThickness="1" 
-                                        Margin="0,0,0,10"
-                                        Padding="10">
+                                <Border Grid.Row="0" 
+                                        Grid.Column="0" 
+                                        Grid.ColumnSpan="2">
                                     <StackPanel>
-                                        <TextBlock Text="Выручка по месяцам" 
-                                                   FontSize="16" 
-                                                   FontWeight="Bold"
-                                                   Margin="0,0,0,10"/>
+                                        <TextBlock Text="📈 Выручка по месяцам" 
+                                                   Style="{StaticResource ChartTitle}"/>
                                         <lvc:CartesianChart x:Name="chartMonthlyRevenue"
                                                            Series="{Binding MonthlyRevenueSeries}"
-                                                           LegendLocation="Right">
+                                                           LegendLocation="Right"
+                                                           Height="250"
+                                                           Background="White"
+                                                           Margin="5">
                                             <lvc:CartesianChart.AxisX>
                                                 <lvc:Axis Title="Месяц" 
-                                                          Labels="{Binding MonthLabels}"/>
+                                                          Labels="{Binding MonthLabels}"
+                                                          Foreground="#555"
+                                                          FontSize="11"/>
                                             </lvc:CartesianChart.AxisX>
                                             <lvc:CartesianChart.AxisY>
-                                                <lvc:Axis Title="Выручка, руб" 
-                                                          LabelFormatter="{Binding CurrencyFormatter}"/>
+                                                <lvc:Axis Title="Выручка, $" 
+                                                          LabelFormatter="{Binding CurrencyFormatter}"
+                                                          Foreground="#555"
+                                                          FontSize="11"/>
+                                            </lvc:CartesianChart.AxisY>
+                                        </lvc:CartesianChart>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Average Deal Chart -->
+                                <Border Grid.Row="1" 
+                                        Grid.Column="0" 
+                                        Grid.ColumnSpan="2">
+                                    <StackPanel>
+                                        <TextBlock Text="📊 Средняя сумма сделки" 
+                                                   Style="{StaticResource ChartTitle}"/>
+                                        <lvc:CartesianChart x:Name="chartAverageDeal"
+                                                           Series="{Binding AverageDealSeries}"
+                                                           LegendLocation="Right"
+                                                           Height="250"
+                                                           Background="White"
+                                                           Margin="5">
+                                            <lvc:CartesianChart.AxisX>
+                                                <lvc:Axis Title="Месяц" 
+                                                          Labels="{Binding MonthLabels}"
+                                                          Foreground="#555"
+                                                          FontSize="11"/>
+                                            </lvc:CartesianChart.AxisX>
+                                            <lvc:CartesianChart.AxisY>
+                                                <lvc:Axis Title="Сумма, $" 
+                                                          LabelFormatter="{Binding CurrencyFormatter}"
+                                                          Foreground="#555"
+                                                          FontSize="11"/>
                                             </lvc:CartesianChart.AxisY>
                                         </lvc:CartesianChart>
                                     </StackPanel>
                                 </Border>
 
                                 <!-- Deal Status Pie Chart -->
-                                <Border Grid.Row="1" Grid.Column="0"
-                                        BorderBrush="#ddd" 
-                                        BorderThickness="1" 
-                                        Margin="0,0,5,0"
-                                        Padding="10">
+                                <Border Grid.Row="2" 
+                                        Grid.Column="0">
                                     <StackPanel>
-                                        <TextBlock Text="Статус сделок" 
-                                                   FontSize="16" 
-                                                   FontWeight="Bold"
-                                                   Margin="0,0,0,10"/>
+                                        <TextBlock Text="🎯 Статус сделок" 
+                                                   Style="{StaticResource ChartTitle}"/>
                                         <lvc:PieChart x:Name="chartDealStatus"
                                                      Series="{Binding DealStatusSeries}"
-                                                     LegendLocation="Bottom"/>
+                                                     LegendLocation="Right"
+                                                     Height="250"
+                                                     InnerRadius="80"
+                                                     Margin="5">
+                                            <lvc:PieChart.ChartLegend>
+                                                <lvc:DefaultLegend FontSize="12" 
+                                                                   Foreground="#555"/>
+                                            </lvc:PieChart.ChartLegend>
+                                        </lvc:PieChart>
                                     </StackPanel>
                                 </Border>
 
                                 <!-- Agent Performance Chart -->
-                                <Border Grid.Row="1" Grid.Column="1"
-                                        BorderBrush="#ddd" 
-                                        BorderThickness="1" 
-                                        Margin="5,0,0,0"
-                                        Padding="10">
+                                <Border Grid.Row="2" 
+                                        Grid.Column="1">
                                     <StackPanel>
-                                        <TextBlock Text="Эффективность агентов" 
-                                                   FontSize="16" 
-                                                   FontWeight="Bold"
-                                                   Margin="0,0,0,10"/>
+                                        <TextBlock Text="🏆 Эффективность агентов" 
+                                                   Style="{StaticResource ChartTitle}"/>
                                         <lvc:CartesianChart x:Name="chartAgentPerformance"
-                                                           Series="{Binding AgentPerformanceSeries}">
+                                                           Series="{Binding AgentPerformanceSeries}"
+                                                           LegendLocation="Right"
+                                                           Height="250"
+                                                           Margin="5">
                                             <lvc:CartesianChart.AxisX>
                                                 <lvc:Axis Title="Агенты" 
-                                                          Labels="{Binding AgentLabels}"/>
+                                                          Labels="{Binding AgentLabels}"
+                                                          Foreground="#555"
+                                                          FontSize="11"/>
                                             </lvc:CartesianChart.AxisX>
                                             <lvc:CartesianChart.AxisY>
-                                                <lvc:Axis Title="Выручка, руб"/>
+                                                <lvc:Axis Title="Выручка, $" 
+                                                          LabelFormatter="{Binding CurrencyFormatter}"
+                                                          Foreground="#555"
+                                                          FontSize="11"/>
                                             </lvc:CartesianChart.AxisY>
                                         </lvc:CartesianChart>
                                     </StackPanel>
@@ -256,45 +381,65 @@
                             </Grid>
 
                             <!-- Tables -->
-                            <TabControl Margin="0,20,0,0">
-                                <TabItem Header="Статистика по агентам">
+                            <TabControl Margin="0,20,0,0" 
+                                        BorderThickness="1"
+                                        BorderBrush="#e0e0e0">
+                                <TabItem Header="👥 Статистика по агентам">
                                     <DataGrid x:Name="dgAgentStats" 
                                               AutoGenerateColumns="False"
-                                              ItemsSource="{Binding SalesReport.AgentStatistics}">
+                                              ItemsSource="{Binding SalesReport.AgentStatistics}"
+                                              CanUserAddRows="False"
+                                              CanUserDeleteRows="False"
+                                              SelectionMode="Single"
+                                              AlternatingRowBackground="#f8f9fa"
+                                              Margin="5">
                                         <DataGrid.Columns>
                                             <DataGridTextColumn Header="Агент" 
                                                                 Binding="{Binding AgentName}" 
-                                                                Width="150"/>
+                                                                Width="*"
+                                                                MinWidth="150"/>
                                             <DataGridTextColumn Header="Всего сделок" 
                                                                 Binding="{Binding TotalDeals}" 
-                                                                Width="100"/>
+                                                                Width="120"
+                                                                ElementStyle="{StaticResource CenterAlign}"/>
                                             <DataGridTextColumn Header="Завершено" 
                                                                 Binding="{Binding CompletedDeals}" 
-                                                                Width="100"/>
+                                                                Width="120"
+                                                                ElementStyle="{StaticResource CenterAlign}"/>
                                             <DataGridTextColumn Header="Выручка" 
                                                                 Binding="{Binding TotalRevenue, StringFormat='C'}" 
-                                                                Width="120"/>
+                                                                Width="150"
+                                                                ElementStyle="{StaticResource RightAlign}"/>
                                             <DataGridTextColumn Header="Успешность" 
-                    Binding="{Binding SuccessRateFormatted}" 
-                    Width="100"/>
+                                                                Binding="{Binding SuccessRateFormatted}" 
+                                                                Width="120"
+                                                                ElementStyle="{StaticResource CenterAlign}"/>
                                         </DataGrid.Columns>
                                     </DataGrid>
                                 </TabItem>
 
-                                <TabItem Header="Топ объектов">
+                                <TabItem Header="🏠 Топ объектов">
                                     <DataGrid x:Name="dgTopProperties" 
                                               AutoGenerateColumns="False"
-                                              ItemsSource="{Binding SalesReport.TopProperties}">
+                                              ItemsSource="{Binding SalesReport.TopProperties}"
+                                              CanUserAddRows="False"
+                                              CanUserDeleteRows="False"
+                                              SelectionMode="Single"
+                                              AlternatingRowBackground="#f8f9fa"
+                                              Margin="5">
                                         <DataGrid.Columns>
                                             <DataGridTextColumn Header="Объект" 
                                                                 Binding="{Binding PropertyTitle}" 
-                                                                Width="200"/>
+                                                                Width="*"
+                                                                MinWidth="200"/>
                                             <DataGridTextColumn Header="Кол-во сделок" 
                                                                 Binding="{Binding DealCount}" 
-                                                                Width="100"/>
+                                                                Width="120"
+                                                                ElementStyle="{StaticResource CenterAlign}"/>
                                             <DataGridTextColumn Header="Общая выручка" 
                                                                 Binding="{Binding TotalRevenue, StringFormat='C'}" 
-                                                                Width="120"/>
+                                                                Width="150"
+                                                                ElementStyle="{StaticResource RightAlign}"/>
                                         </DataGrid.Columns>
                                     </DataGrid>
                                 </TabItem>
@@ -305,51 +450,53 @@
             </TabItem>
 
             <!-- Property Analysis Tab -->
-            <TabItem Header="Анализ объектов">
+            <TabItem Header="🏢 Анализ объектов">
                 <Grid>
                     <TextBlock Text="В разработке..." 
                                HorizontalAlignment="Center" 
                                VerticalAlignment="Center"
-                               FontSize="16"/>
+                               FontSize="18"
+                               Foreground="#7f8c8d"/>
                 </Grid>
             </TabItem>
 
             <!-- Agent Performance Tab -->
-            <TabItem Header="Эффективность агентов">
+            <TabItem Header="👤 Эффективность агентов">
                 <Grid>
                     <TextBlock Text="В разработке..." 
                                HorizontalAlignment="Center" 
                                VerticalAlignment="Center"
-                               FontSize="16"/>
+                               FontSize="18"
+                               Foreground="#7f8c8d"/>
                 </Grid>
             </TabItem>
 
             <!-- Financial Report Tab -->
-            <TabItem Header="Финансовый отчет">
+            <TabItem Header="💰 Финансовый отчет">
                 <Grid>
                     <TextBlock Text="В разработке..." 
                                HorizontalAlignment="Center" 
                                VerticalAlignment="Center"
-                               FontSize="16"/>
+                               FontSize="18"
+                               Foreground="#7f8c8d"/>
                 </Grid>
             </TabItem>
         </TabControl>
 
         <!-- Status Bar -->
-        <StatusBar Grid.Row="2">
+        <StatusBar Grid.Row="2" Background="#f8f9fa">
             <StatusBarItem>
-                <TextBlock x:Name="tbStatus" Text="Готов"/>
+                <TextBlock x:Name="tbStatus" 
+                           Text="{Binding ProgressText}"
+                           Foreground="#2c3e50"/>
             </StatusBarItem>
             <StatusBarItem HorizontalAlignment="Right">
                 <StackPanel Orientation="Horizontal">
                     <ProgressBar x:Name="pbProgress" 
                                  Width="200" 
-                                 Height="20"
-                                 IsIndeterminate="{Binding IsLoading}"/>
-                    <TextBlock x:Name="tbProgressText" 
-                               Text="{Binding ProgressText}"
-                               Margin="5,0,0,0"
-                               Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                 Height="16"
+                                 IsIndeterminate="{Binding IsLoading}"
+                                 Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
                 </StackPanel>
             </StatusBarItem>
         </StatusBar>

@@ -33,7 +33,7 @@ namespace Agencies.API.Validators
 
         private bool BeValidDealStatus(string status)
         {
-            var validStatuses = new[] { "Pending", "Completed", "Cancelled", "OnHold", "Failed" };
+            var validStatuses = new[] { "В ожидании", "Завершено", "Отменено"};
             return validStatuses.Contains(status);
         }
     }

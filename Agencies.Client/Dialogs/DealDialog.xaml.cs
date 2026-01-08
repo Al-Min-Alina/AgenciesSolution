@@ -3,15 +3,19 @@ using Agencies.Client.ViewModels;
 using Agencies.Core.DTO;
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace Agencies.Client.Dialogs
 {
     public partial class DealDialog : Window
     {
         private readonly ApiService _apiService;
+        private readonly UserDto _currentUser;
         private readonly bool _isEditMode;
         private readonly DealViewModel _viewModel;
 
@@ -29,20 +33,75 @@ namespace Agencies.Client.Dialogs
                 Deal = deal ?? new DealDto
                 {
                     DealDate = DateTime.Now,
-                    Status = "Pending"
+                    Status = "В ожидании"
                 },
                 WindowTitle = _isEditMode ? "Редактирование сделки" : "Новая сделка",
                 Statuses = new ObservableCollection<string>
                 {
-                    "Pending",
-                    "Completed",
-                    "Cancelled"
+                    "В ожидании",
+                    "Завершено",
+                    "Отменено"
                 }
             };
 
             DataContext = _viewModel;
 
             Loaded += async (s, e) => await InitializeAsync();
+
+            // Назначаем обработчики событий для обновления информации
+            cbProperty.SelectionChanged += CbProperty_SelectionChanged;
+            cbClient.SelectionChanged += CbClient_SelectionChanged;
+
+            // Обновляем CanSave при изменении свойств
+            _viewModel.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(_viewModel.PropertyId) ||
+                    e.PropertyName == nameof(_viewModel.DealAmount) ||
+                    e.PropertyName == nameof(_viewModel.ClientId) ||
+                    e.PropertyName == nameof(_viewModel.Status))
+                {
+                    // Обновляем CanSave через вызов PropertyChanged
+                    _viewModel.RaisePropertyChanged(nameof(_viewModel.CanSave));
+                }
+            };
+        }
+
+        private void CbProperty_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_viewModel?.Properties == null) return;
+
+            var property = cbProperty.SelectedItem as PropertyDto;
+            if (property != null)
+            {
+                // Обновляем информацию в текстовом блоке напрямую
+                tbPropertyInfo.Text = $"{property.Title}\nАдрес: {property.Address}\nЦена: {property.Price:C}\nПлощадь: {property.Area} м²";
+
+                // Обновляем ID в ViewModel
+                _viewModel.PropertyId = property.Id;
+            }
+            else
+            {
+                tbPropertyInfo.Text = "Не выбран";
+            }
+        }
+
+        private void CbClient_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_viewModel?.Clients == null) return;
+
+            var client = cbClient.SelectedItem as ClientDto;
+            if (client != null)
+            {
+                // Обновляем информацию в текстовом блоке напрямую
+                tbClientInfo.Text = $"{client.FirstName} {client.LastName}\nТелефон: {client.Phone}\nEmail: {client.Email}\nБюджет: {client.Budget:C}";
+
+                // Обновляем ID в ViewModel
+                _viewModel.ClientId = client.Id;
+            }
+            else
+            {
+                tbClientInfo.Text = "Не выбран";
+            }
         }
 
         private async Task InitializeAsync()
@@ -54,9 +113,26 @@ namespace Agencies.Client.Dialogs
                 {
                     // Загружаем объекты недвижимости
                     var properties = await _apiService.GetPropertiesAsync();
+                    var availableProperties = properties.Where(p => p.IsAvailable == true).ToList();
                     await Dispatcher.InvokeAsync(() =>
                     {
-                        _viewModel.Properties = new ObservableCollection<PropertyDto>(properties);
+                        _viewModel.Properties = new ObservableCollection<PropertyDto>(availableProperties);
+
+                        // Устанавливаем выбранный объект, если он доступен
+                        if (_viewModel.Deal.PropertyId > 0)
+                        {
+                            var selectedProperty = availableProperties.FirstOrDefault(p => p.Id == _viewModel.Deal.PropertyId);
+                            if (selectedProperty != null)
+                            {
+                                cbProperty.SelectedValue = _viewModel.Deal.PropertyId;
+                            }
+                            else
+                            {
+                                // Если объект недоступен, сбрасываем выбор
+                                _viewModel.PropertyId = 0;
+                                _viewModel.Deal.PropertyId = 0;
+                            }
+                        }
                     });
 
                     // Загружаем клиентов
@@ -88,15 +164,120 @@ namespace Agencies.Client.Dialogs
 
         private async Task<UserDto[]> LoadAgentsAsync()
         {
-            // В реальном приложении здесь запрос к API для получения списка агентов
-            return await Task.Run(() =>
+            try
             {
-                return new[]
+                // Загружаем агентов с сервера через ApiService
+                var agents = await _apiService.GetAgentsAsync();
+                Console.WriteLine($"API вернул {agents?.Count ?? 0} агентов");
+
+                await Dispatcher.InvokeAsync(() =>
                 {
-                    new UserDto { Id = 1, Username = "agent1", Role = "User" },
-                    new UserDto { Id = 2, Username = "agent2", Role = "User" }
-                };
-            });
+                    if (agents != null && agents.Any())
+                    {
+                        Console.WriteLine($"Успешно загружено {agents.Count} агентов");
+
+                        // Устанавливаем список агентов во ViewModel
+                        _viewModel.Agents = new ObservableCollection<UserDto>(agents);
+
+                        // Настраиваем ComboBox
+                        if (cbAgent != null)
+                        {
+                            cbAgent.ItemsSource = _viewModel.Agents;
+                            cbAgent.DisplayMemberPath = "Username";
+                            cbAgent.SelectedValuePath = "Id";
+
+                            // Выбор агента по умолчанию
+                            if (_viewModel.Deal.AgentId > 0)
+                            {
+                                cbAgent.SelectedValue = _viewModel.Deal.AgentId;
+                                Console.WriteLine($"Выбран существующий агент с ID: {_viewModel.Deal.AgentId}");
+                            }
+                            else if (_currentUser?.Role == "User" && agents.Any(a => a.Id == _currentUser.Id))
+                            {
+                                // Выбираем текущего пользователя-агента
+                                cbAgent.SelectedValue = _currentUser.Id;
+                                Console.WriteLine($"Автовыбор текущего агента: {_currentUser.Username}");
+                            }
+                            else if (agents.Any())
+                            {
+                                // Или первого агента
+                                cbAgent.SelectedIndex = 0;
+                                var firstAgent = agents.First();
+                                Console.WriteLine($"Выбран первый агент: {firstAgent.Username}");
+                            }
+                        }
+
+                        // Показываем элементы выбора агента
+                        if (cbAgent != null) cbAgent.Visibility = Visibility.Visible;
+                        if (tbAgentLabel != null) tbAgentLabel.Visibility = Visibility.Visible;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Агенты не загружены или список пуст");
+
+                        // Нет агентов или ошибка
+                        if (_currentUser?.Role == "User")
+                        {
+                            // Агент назначает сделку себе
+                            _viewModel.Deal.AgentId = _currentUser.Id;
+
+                            if (cbAgent != null) cbAgent.Visibility = Visibility.Collapsed;
+                            if (tbAgentLabel != null) tbAgentLabel.Visibility = Visibility.Collapsed;
+
+                            Console.WriteLine($"Агент назначен на текущего пользователя: {_currentUser.Username}");
+                        }
+                        else
+                        {
+                            _viewModel.ErrorMessage = "Нет доступных агентов в системе";
+                            _viewModel.HasError = true;
+
+                            if (cbAgent != null) cbAgent.Visibility = Visibility.Collapsed;
+                            if (tbAgentLabel != null) tbAgentLabel.Visibility = Visibility.Collapsed;
+                        }
+                    }
+                });
+
+                return agents?.ToArray() ?? Array.Empty<UserDto>();
+            }
+            catch (System.Net.Http.HttpRequestException httpEx) when (httpEx.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    Console.WriteLine($"Доступ запрещен (403): {httpEx.Message}");
+
+                    if (_currentUser?.Role == "User")
+                    {
+                        // Используем только текущего пользователя как агента
+                        _viewModel.Agents = new ObservableCollection<UserDto>
+                        {
+                            new UserDto { Id = _currentUser.Id, Username = _currentUser.Username, Role = _currentUser.Role }
+                        };
+                        _viewModel.Deal.AgentId = _currentUser.Id;
+
+                        // Скрываем выбор агента
+                        if (cbAgent != null) cbAgent.Visibility = Visibility.Collapsed;
+                        if (tbAgentLabel != null) tbAgentLabel.Visibility = Visibility.Collapsed;
+
+                        Console.WriteLine($"Агент назначен на текущего пользователя: {_currentUser.Username}");
+                    }
+                });
+
+                return Array.Empty<UserDto>();
+            }
+            catch (Exception ex)
+            {
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    Console.WriteLine($"Ошибка загрузки агентов: {ex}");
+                    _viewModel.ErrorMessage = $"Не удалось загрузить список агентов: {ex.Message}";
+                    _viewModel.HasError = true;
+
+                    if (cbAgent != null) cbAgent.Visibility = Visibility.Collapsed;
+                    if (tbAgentLabel != null) tbAgentLabel.Visibility = Visibility.Collapsed;
+                });
+
+                return Array.Empty<UserDto>();
+            }
         }
 
         private void BtnSave_Click(object sender, RoutedEventArgs e)
@@ -113,7 +294,7 @@ namespace Agencies.Client.Dialogs
             _viewModel.HasError = false;
             _viewModel.ErrorMessage = string.Empty;
 
-            if (_viewModel.Deal.PropertyId <= 0)
+            if (_viewModel.PropertyId <= 0)
             {
                 _viewModel.ErrorMessage = "Выберите объект недвижимости";
                 _viewModel.HasError = true;
@@ -121,7 +302,7 @@ namespace Agencies.Client.Dialogs
                 return false;
             }
 
-            if (_viewModel.Deal.ClientId <= 0)
+            if (_viewModel.ClientId <= 0)
             {
                 _viewModel.ErrorMessage = "Выберите клиента";
                 _viewModel.HasError = true;
@@ -129,7 +310,7 @@ namespace Agencies.Client.Dialogs
                 return false;
             }
 
-            if (_viewModel.Deal.DealAmount <= 0)
+            if (_viewModel.DealAmount <= 0)
             {
                 _viewModel.ErrorMessage = "Сумма сделки должна быть больше 0";
                 _viewModel.HasError = true;
@@ -145,7 +326,7 @@ namespace Agencies.Client.Dialogs
                 return false;
             }
 
-            if (string.IsNullOrWhiteSpace(_viewModel.Deal.Status))
+            if (string.IsNullOrWhiteSpace(_viewModel.Status))
             {
                 _viewModel.ErrorMessage = "Выберите статус сделки";
                 _viewModel.HasError = true;
@@ -166,18 +347,114 @@ namespace Agencies.Client.Dialogs
             set => SetProperty(ref _deal, value);
         }
 
+        // Для работы с Budget клиента (double? -> string)
+        //public string BudgetDisplay
+        //{
+        //    get
+        //    {
+        //        if (_selectedClient != null && _selectedClient.Budget.HasValue)
+        //            return _selectedClient.Budget.Value.ToString("N2");
+        //        return "0.00";
+        //    }
+        //}
+
+        //private ClientDto _selectedClient;
+        //public ClientDto SelectedClient
+        //{
+        //    get => _selectedClient;
+        //    set
+        //    {
+        //        SetProperty(ref _selectedClient, value);
+        //        OnPropertyChanged(nameof(BudgetDisplay));
+        //    }
+        //}
+
+        public double DealAmount
+        {
+            get => Deal?.DealAmount ?? 0.0;
+            set
+            {
+                if (Deal != null && Deal.DealAmount != value)
+                {
+                    Deal.DealAmount = value;
+                    OnPropertyChanged(nameof(DealAmount));
+                    OnPropertyChanged(nameof(CanSave));
+                }
+            }
+        }
+
+        public int PropertyId
+        {
+            get => Deal?.PropertyId ?? 0;
+            set
+            {
+                if (Deal != null && Deal.PropertyId != value)
+                {
+                    Deal.PropertyId = value;
+                    OnPropertyChanged(nameof(PropertyId));
+                    OnPropertyChanged(nameof(SelectedPropertyInfo));
+                    OnPropertyChanged(nameof(CanSave));
+                }
+            }
+        }
+
+        public int ClientId
+        {
+            get => Deal?.ClientId ?? 0;
+            set
+            {
+                if (Deal != null && Deal.ClientId != value)
+                {
+                    Deal.ClientId = value;
+                    OnPropertyChanged(nameof(ClientId));
+                    OnPropertyChanged(nameof(SelectedClientInfo));
+                    OnPropertyChanged(nameof(CanSave));
+
+                    //// Обновляем выбранного клиента
+                    //if (Clients != null)
+                    //    SelectedClient = Clients.FirstOrDefault(c => c.Id == value);
+                }
+            }
+        }
+
+        public string Status
+        {
+            get => Deal?.Status ?? "";
+            set
+            {
+                if (Deal != null && Deal.Status != value)
+                {
+                    Deal.Status = value;
+                    OnPropertyChanged(nameof(Status));
+                    OnPropertyChanged(nameof(CanSave));
+                }
+            }
+        }
+
         private ObservableCollection<PropertyDto> _properties;
         public ObservableCollection<PropertyDto> Properties
         {
             get => _properties;
-            set => SetProperty(ref _properties, value);
+            set
+            {
+                if (SetProperty(ref _properties, value))
+                {
+                    OnPropertyChanged(nameof(SelectedPropertyInfo));
+                }
+            }
         }
 
         private ObservableCollection<ClientDto> _clients;
         public ObservableCollection<ClientDto> Clients
         {
             get => _clients;
-            set => SetProperty(ref _clients, value);
+            set
+            {
+                if (SetProperty(ref _clients, value))
+                {
+                    OnPropertyChanged(nameof(SelectedClientInfo));
+                }
+            }
         }
 
         private ObservableCollection<UserDto> _agents;
@@ -219,12 +496,12 @@ namespace Agencies.Client.Dialogs
         {
             get
             {
-                if (Deal?.PropertyId == null || Properties == null)
+                if (PropertyId <= 0 || Properties == null)
                     return "Не выбран";
 
-                var property = Properties.FirstOrDefault(p => p.Id == Deal.PropertyId);
+                var property = Properties.FirstOrDefault(p => p.Id == PropertyId);
                 return property != null
-                    ? $"{property.Title}\nАдрес: {property.Address}\nЦена: {property.Price:C}\nПлощадь: {property.Area} м²"
+                    ? $"{property.Title}\nАдрес: {property.Address}\nЦена: ${property.Price:N2}\nПлощадь: {property.Area} м²"
                     : "Не выбран";
             }
         }
@@ -233,20 +510,71 @@ namespace Agencies.Client.Dialogs
         {
             get
             {
-                if (Deal?.ClientId == null || Clients == null)
+                if (ClientId <= 0 || Clients == null)
                     return "Не выбран";
 
-                var client = Clients.FirstOrDefault(c => c.Id == Deal.ClientId);
-                return client != null
-                    ? $"{client.FirstName} {client.LastName}\nТелефон: {client.Phone}\nEmail: {client.Email}\nБюджет: {client.Budget:C}"
-                    : "Не выбран";
+                var client = Clients.FirstOrDefault(c => c.Id == ClientId);
+                if (client != null)
+                {
+                    // Форматируем бюджет в долларах
+                    var budget = client.Budget.HasValue ? $"${client.Budget.Value:N2}" : "Не указан";
+                    return $"{client.FirstName} {client.LastName}\nТелефон: {client.Phone}\nEmail: {client.Email}\nБюджет: {budget}";
+                }
+                return "Не выбран";
             }
         }
 
-        public bool CanSave => Deal != null &&
-                              Deal.PropertyId > 0 &&
-                              Deal.ClientId > 0 &&
-                              Deal.DealAmount > 0 &&
-                              !string.IsNullOrWhiteSpace(Deal.Status);
+        public bool CanSave
+        {
+            get
+            {
+                Console.WriteLine($"=== Проверка CanSave для сделки ===");
+                Console.WriteLine($"Deal is null: {Deal == null}");
+
+                if (Deal != null)
+                {
+                    Console.WriteLine($"PropertyId: {PropertyId} (valid: {PropertyId > 0})");
+                    Console.WriteLine($"ClientId: {ClientId} (valid: {ClientId > 0})");
+                    Console.WriteLine($"DealAmount: {DealAmount} (valid: {DealAmount > 0})");
+                    Console.WriteLine($"Status: '{Status}' (valid: {!string.IsNullOrWhiteSpace(Status)})");
+
+                    bool result = PropertyId > 0 &&
+                                 ClientId > 0 &&
+                                 DealAmount > 0 &&
+                                 !string.IsNullOrWhiteSpace(Status);
+
+                    Console.WriteLine($"CanSave result: {result}");
+                    Console.WriteLine($"=== End Check ===");
+
+                    return result;
+                }
+                return false;
+            }
+        }
+    }
+
+    public class BaseViewModel : INotifyPropertyChanged
+    {
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public void RaisePropertyChanged(string propertyName)
+        {
+            OnPropertyChanged(propertyName);
+        }
+
+        protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value))
+                return false;
+
+            field = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
     }
 }

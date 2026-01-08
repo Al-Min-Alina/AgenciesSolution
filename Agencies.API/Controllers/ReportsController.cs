@@ -61,10 +61,10 @@ namespace Agencies.API.Controllers
                 EndDate = endDate.Value,
                 GeneratedDate = DateTime.UtcNow,
                 TotalDeals = deals.Count(),
-                CompletedDeals = deals.Count(d => d.Status == "Completed"),
-                PendingDeals = deals.Count(d => d.Status == "Pending"),
-                CancelledDeals = deals.Count(d => d.Status == "Cancelled"),
-                TotalRevenue = deals.Where(d => d.Status == "Completed").Sum(d => d.DealAmount),
+                CompletedDeals = deals.Count(d => d.Status == "Завершено"),
+                PendingDeals = deals.Count(d => d.Status == "В ожидании"),
+                CancelledDeals = deals.Count(d => d.Status == "Отменено"),
+                TotalRevenue = deals.Where(d => d.Status == "Завершено").Sum(d => d.DealAmount),
                 AverageDealAmount = deals.Any() ? deals.Average(d => d.DealAmount) : 0
             };
 
@@ -76,8 +76,8 @@ namespace Agencies.API.Controllers
                     AgentId = g.Key,
                     AgentName = g.First().Agent?.Username ?? "Неизвестно",
                     TotalDeals = g.Count(),
-                    CompletedDeals = g.Count(d => d.Status == "Completed"),
-                    TotalRevenue = g.Where(d => d.Status == "Completed").Sum(d => d.DealAmount)
+                    CompletedDeals = g.Count(d => d.Status == "Завершено"),
+                    TotalRevenue = g.Where(d => d.Status == "Завершено").Sum(d => d.DealAmount)
                 })
                 .ToList();
 
@@ -119,7 +119,7 @@ namespace Agencies.API.Controllers
             var properties = await _propertyRepository.GetAllAsync();
             var deals = await _dealRepository.GetAllAsync();
 
-            var completedDeals = deals.Where(d => d.Status == "Completed").ToList();
+            var completedDeals = deals.Where(d => d.Status == "Завершено").ToList();
 
             var report = new PropertyAnalysisReportDto
             {
@@ -219,12 +219,12 @@ namespace Agencies.API.Controllers
                     AgentId = agent.Id,
                     AgentName = agent.Username,
                     TotalDeals = agentDeals.Count,
-                    CompletedDeals = agentDeals.Count(d => d.Status == "Completed"),
-                    PendingDeals = agentDeals.Count(d => d.Status == "Pending"),
-                    CancelledDeals = agentDeals.Count(d => d.Status == "Cancelled"),
-                    TotalRevenue = agentDeals.Where(d => d.Status == "Completed").Sum(d => d.DealAmount),
+                    CompletedDeals = agentDeals.Count(d => d.Status == "Завершено"),
+                    PendingDeals = agentDeals.Count(d => d.Status == "В ожидании"),
+                    CancelledDeals = agentDeals.Count(d => d.Status == "Отменено"),
+                    TotalRevenue = agentDeals.Where(d => d.Status == "Завершено").Sum(d => d.DealAmount),
                     AverageDealAmount = agentDeals.Any() ? agentDeals.Average(d => d.DealAmount) : 0,
-                    SuccessRate = agentDeals.Any() ? (double)agentDeals.Count(d => d.Status == "Completed") / agentDeals.Count * 100 : 0,  // decimal → double
+                    SuccessRate = agentDeals.Any() ? (double)agentDeals.Count(d => d.Status == "Завершено") / agentDeals.Count * 100 : 0,  // decimal → double
                     AverageDealTime = CalculateAverageDealTime(agentDeals)
                 };
 
@@ -312,7 +312,7 @@ namespace Agencies.API.Controllers
                 endDate = DateTime.Now;
 
             var deals = await _dealRepository.GetDealsByDateRangeAsync(startDate.Value, endDate.Value);
-            var completedDeals = deals.Where(d => d.Status == "Completed").ToList();
+            var completedDeals = deals.Where(d => d.Status == "Завершено").ToList();
 
             // УБЕРИТЕ 'm' суффикс для decimal, используйте 0.03 как double
             var commissionRate = 0.03; // 3% комиссия
@@ -381,7 +381,7 @@ namespace Agencies.API.Controllers
         {
             if (!deals.Any()) return TimeSpan.Zero;
 
-            var completedDeals = deals.Where(d => d.Status == "Completed").ToList();
+            var completedDeals = deals.Where(d => d.Status == "Завершено").ToList();
             if (!completedDeals.Any()) return TimeSpan.Zero;
 
             var totalDays = completedDeals.Sum(d => (d.DealDate - d.CreatedAt).Days);

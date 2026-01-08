@@ -51,11 +51,11 @@ namespace Agencies.Client.Services
                         report.TotalDeals++;
                         report.TotalRevenue += deal.DealAmount;
 
-                        if (deal.Status == "Completed")
+                        if (deal.Status == "Завершено")
                         {
                             report.CompletedDeals++;
                         }
-                        else if (deal.Status == "Pending")
+                        else if (deal.Status == "Отменено")
                         {
                             report.PendingDeals++;
                         }
@@ -73,7 +73,7 @@ namespace Agencies.Client.Services
                         var stats = agentStats[deal.AgentId];
                         stats.TotalDeals++;
                         stats.TotalRevenue += deal.DealAmount;
-                        if (deal.Status == "Completed") stats.CompletedDeals++;
+                        if (deal.Status == "Завершено") stats.CompletedDeals++;
                         agentStats[deal.AgentId] = stats;
                     }
                 });
@@ -157,7 +157,7 @@ namespace Agencies.Client.Services
                             PropertyType = g.Key,
                             Count = count,
                             AveragePrice = count > 0 ? totalPrice / count : 0,
-                            AverageArea = count > 0 ? totalArea / count : 0  // Убрать преобразование в decimal
+                            AverageArea = count > 0 ? totalArea / count : 0  
                         };
                     })
                     .ToList();
@@ -178,7 +178,7 @@ namespace Agencies.Client.Services
 
                 // Анализ сделок по свойствам
                 var propertyDeals = deals
-                    .Where(d => d.Status == "Completed")
+                    .Where(d => d.Status == "Завершено")
                     .GroupBy(d => d.PropertyId)
                     .ToDictionary(g => g.Key, g => g.ToList());
 
@@ -206,8 +206,7 @@ namespace Agencies.Client.Services
             }
         }
 
-        // ИЗМЕНИТЬ: List<decimal> → List<double>
-        private double CalculateMedian(List<double> numbers)  // decimal → double
+        private double CalculateMedian(List<double> numbers)  
         {
             if (!numbers.Any()) return 0;
 
@@ -234,8 +233,8 @@ namespace Agencies.Client.Services
         public int TotalDeals { get; set; }
         public int CompletedDeals { get; set; }
         public int PendingDeals { get; set; }
-        public double TotalRevenue { get; set; }              // decimal → double
-        public double AverageDealAmount { get; set; }         // decimal → double
+        public double TotalRevenue { get; set; }              
+        public double AverageDealAmount { get; set; }        
         public List<AgentStatistics> AgentStatistics { get; set; }
         public List<MonthlyStatistics> MonthlyStats { get; set; }
     }
@@ -246,9 +245,9 @@ namespace Agencies.Client.Services
         public string AgentName { get; set; }
         public int TotalDeals { get; set; }
         public int CompletedDeals { get; set; }
-        public double TotalRevenue { get; set; }              // decimal → double
-        public double SuccessRate => TotalDeals > 0 ?         // decimal → double
-            (double)CompletedDeals / TotalDeals * 100 : 0;    // decimal → double
+        public double TotalRevenue { get; set; }              
+        public double SuccessRate => TotalDeals > 0 ?         
+            (double)CompletedDeals / TotalDeals * 100 : 0;    
     }
 
     public class MonthlyStatistics
@@ -257,8 +256,8 @@ namespace Agencies.Client.Services
         public int Month { get; set; }
         public string MonthName => new DateTime(Year, Month, 1).ToString("MMMM yyyy");
         public int DealCount { get; set; }
-        public double TotalRevenue { get; set; }              // decimal → double
-        public double AverageDealAmount { get; set; }         // decimal → double
+        public double TotalRevenue { get; set; }              
+        public double AverageDealAmount { get; set; }         
     }
 
     public class PropertyAnalysisReport
@@ -267,21 +266,21 @@ namespace Agencies.Client.Services
         public int TotalProperties { get; set; }
         public int AvailableProperties { get; set; }
         public int SoldProperties { get; set; }
-        public double MinPrice { get; set; }                  // decimal → double
-        public double MaxPrice { get; set; }                  // decimal → double
-        public double AveragePrice { get; set; }              // decimal → double
-        public double MedianPrice { get; set; }               // decimal → double
+        public double MinPrice { get; set; }                  
+        public double MaxPrice { get; set; }                  
+        public double AveragePrice { get; set; }              
+        public double MedianPrice { get; set; }               
         public List<PropertyTypeAnalysis> PropertyTypeAnalysis { get; set; }
         public int PropertiesWithDeals { get; set; }
-        public double AverageDealsPerProperty { get; set; }   // decimal → double
+        public double AverageDealsPerProperty { get; set; }   
     }
 
     public class PropertyTypeAnalysis
     {
         public string PropertyType { get; set; }
         public int Count { get; set; }
-        public double AveragePrice { get; set; }              // decimal → double
-        public double AverageArea { get; set; }               // decimal → double
+        public double AveragePrice { get; set; }              
+        public double AverageArea { get; set; }               
     }
 
     public class ReportGenerationException : Exception

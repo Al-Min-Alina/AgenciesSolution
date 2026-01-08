@@ -28,6 +28,7 @@ namespace Agencies.Client
         private bool _isAutoRefreshEnabled;
         private readonly DispatcherTimer _autoRefreshTimer;
         private bool _isLoading;
+        private ObservableCollection<DealDto> _allDeals;
 
         public MainWindow()
         {
@@ -41,6 +42,7 @@ namespace Agencies.Client
             _properties = new ObservableCollection<PropertyDto>();
             _clients = new ObservableCollection<ClientDto>();
             _deals = new ObservableCollection<DealDto>();
+            _allDeals = new ObservableCollection<DealDto>();
 
             // Привязка данных
             dgProperties.ItemsSource = _properties;
@@ -109,11 +111,13 @@ namespace Agencies.Client
 
                     case DataType.Deals:
                         _deals.Clear();
+                        _allDeals.Clear(); 
                         if (e.Data is List<DealDto> deals)
                         {
                             foreach (var deal in deals)
                             {
                                 _deals.Add(deal);
+                                _allDeals.Add(deal); 
                             }
                         }
                         break;
@@ -526,16 +530,55 @@ namespace Agencies.Client
 
                 if (dgClients.SelectedItem is ClientDto selectedClient)
                 {
-                    // Проверка прав для редактирования
-                    if (_currentUser.Role != "Admin" && selectedClient.AgentId != _currentUser.Id)
+                bool canEdit = false;
+
+                if (_currentUser.Role == "Admin")
+                {
+                    canEdit = true; // Админы могут редактировать всех
+                }
+                else
+                {
+                    // Для НЕ-админов проверяем 3 условия:
+
+                    // 1. Проверка по AgentId (самая надежная)
+                    if (selectedClient.AgentId.HasValue && selectedClient.AgentId.Value == _currentUser.Id)
                     {
-                        MessageBox.Show("Вы можете редактировать только своих клиентов", "Доступ запрещен",
-                            MessageBoxButton.OK, MessageBoxImage.Warning);
+                        canEdit = true;
+                    }
+                    // 2. Проверка по AgentName (если ID не совпадает)
+                    else if (!string.IsNullOrEmpty(selectedClient.AgentName))
+                    {
+                        string currentUsername = _currentUser.Username.ToLower().Trim();
+                        string clientAgentName = selectedClient.AgentName.ToLower().Trim();
+
+                        // Сравниваем имена (может быть "Anna", "anna", "Anna (ID: 1)" и т.д.)
+                        if (clientAgentName.Contains(currentUsername))
+                        {
+                            canEdit = true;
+                        }
+                    }
+                    // 3. Если у клиента вообще нет агента, доступ запрещен для не-админов
+                    else if (!selectedClient.AgentId.HasValue)
+                    {
+                        MessageBox.Show("Этот клиент не назначен агенту. Только администратор может редактировать.",
+                            "Доступ запрещен", MessageBoxButton.OK, MessageBoxImage.Warning);
                         return;
                     }
+                }
 
-                    // Создаем UserDto из LoginResponse
-                    var userDto = new UserDto
+                if (!canEdit)
+                {
+                    // Детальное сообщение для отладки
+                    string debugInfo = $"Ваш ID: {_currentUser.Id}, Имя: {_currentUser.Username}, Роль: {_currentUser.Role}\n" +
+                                     $"ID агента клиента: {selectedClient.AgentId}, Имя агента: {selectedClient.AgentName ?? "Не указано"}";
+
+                    MessageBox.Show($"Вы можете редактировать только своих клиентов.\n\n{debugInfo}",
+                        "Доступ запрещен", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Создаем UserDto из LoginResponse
+                var userDto = new UserDto
                     {
                         Id = _currentUser.Id,
                         Username = _currentUser.Username,
@@ -777,11 +820,37 @@ namespace Agencies.Client
 
             if (dgDeals.SelectedItem is DealDto selectedDeal)
             {
-                // Проверка прав для редактирования
-                if (_currentUser.Role != "Admin" && selectedDeal.AgentId != _currentUser.Id)
+                bool canEdit = false;
+
+                if (_currentUser.Role == "Admin")
                 {
-                    MessageBox.Show("Вы можете редактировать только свои сделки", "Доступ запрещен",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    canEdit = true;
+                }
+                else
+                {
+                    if (selectedDeal.AgentId == _currentUser.Id)
+                    {
+                        canEdit = true;
+                    }
+                    else if (!string.IsNullOrEmpty(selectedDeal.AgentName))
+                    {
+                        string currentUsername = _currentUser.Username.ToLower().Trim();
+                        string dealAgentName = selectedDeal.AgentName.ToLower().Trim();
+
+                        if (dealAgentName.Contains(currentUsername))
+                        {
+                            canEdit = true;
+                        }
+                    }
+                }
+
+                if (!canEdit)
+                {
+                    string debugInfo = $"Ваш ID: {_currentUser.Id}, Имя: {_currentUser.Username}, Роль: {_currentUser.Role}\n" +
+                                     $"ID агента сделки: {selectedDeal.AgentId}, Имя агента: {selectedDeal.AgentName ?? "Не указано"}";
+
+                    MessageBox.Show($"Вы можете редактировать только свои сделки.\n\n{debugInfo}",
+                        "Доступ запрещен", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
@@ -797,6 +866,7 @@ namespace Agencies.Client
                     {
                         ShowProgressDialog("Обновление сделки", "Сохранение изменений...");
 
+                        // Теперь UpdateDealAsync всегда должен возвращать DealDto
                         var updatedDeal = await Task.Run(async () =>
                         {
                             return await _apiService.UpdateDealAsync(
@@ -814,11 +884,30 @@ namespace Agencies.Client
 
                         await Dispatcher.InvokeAsync(() =>
                         {
-                            // Обновляем элемент в коллекции
-                            var index = _deals.IndexOf(selectedDeal);
-                            _deals[index] = updatedDeal;
-
-                            tbStatus.Text = "Сделка успешно обновлена";
+                            // Теперь updatedDeal не должен быть null
+                            if (updatedDeal != null)
+                            {
+                                // Обновляем элемент в коллекции
+                                var index = _deals.IndexOf(selectedDeal);
+                                if (index >= 0)
+                                {
+                                    _deals[index] = updatedDeal;
+                                    tbStatus.Text = "Сделка успешно обновлена";
+                                }
+                                else
+                                {
+                                    // Если сделка не найдена, добавляем её
+                                    _deals.Add(updatedDeal);
+                                    tbStatus.Text = "Сделка добавлена";
+                                }
+                            }
+                            else
+                            {
+                                // Если всё же null, обновляем весь список
+                                _dataLoader.ClearCache();
+                                MessageBox.Show("Сделка обновлена, обновите список", "Информация",
+                                    MessageBoxButton.OK, MessageBoxImage.Information);
+                            }
                         });
 
                         // Обновляем кеш
@@ -906,14 +995,27 @@ namespace Agencies.Client
 
         private void CbDealStatusFilter_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (cbDealStatusFilter.SelectedItem is ComboBoxItem selectedItem && _currentUser != null)
+            if (_currentUser == null || cbDealStatusFilter.SelectedItem == null)
+                return;
+
+            if (cbDealStatusFilter.SelectedItem is ComboBoxItem selectedItem)
             {
-                var status = selectedItem.Tag as string;
-                // Здесь нужно реализовать фильтрацию сделок по статусу
+                string status = selectedItem.Content.ToString();
+
+                // Преобразуем текст в статус
+                string statusFilter = status switch
+                {
+                    "Все" => "",
+                    "В ожидании" => "В ожидании",
+                    "Завершено" => "Завершено",
+                    "Отменено" => "Отменено",
+                    _ => ""
+                };
+
+                FilterDealsByStatus(statusFilter);
             }
         }
 
-        // ===== НОВЫЕ МЕТОДЫ ДЛЯ УПРАВЛЕНИЯ ЗАГРУЗКОЙ =====
 
         private async Task StartLoadingAsync(string message)
         {
@@ -930,7 +1032,7 @@ namespace Agencies.Client
             try
             {
                 ShowProgressDialog("Обновление", message);
-                await _dataLoader.LoadAllDataAsync(); // Загружаем все данные
+                await _dataLoader.LoadAllDataAsync(); 
             }
             catch (Exception ex)
             {
@@ -1050,7 +1152,6 @@ namespace Agencies.Client
                 }
                 else
                 {
-                    // После загрузки ВОССТАНАВЛИВАЕМ доступность кнопок
                     UpdateEditButtons();
                 }
 
@@ -1096,13 +1197,12 @@ namespace Agencies.Client
                 }
                 catch (Exception ex)
                 {
-                    // Логируем ошибку, но не показываем пользователю при автообновлении
                     Console.WriteLine($"Ошибка автообновления: {ex.Message}");
                 }
             }
         }
 
-        // Метод для отображения диалога прогресса (улучшенная версия)
+        // Метод для отображения диалога прогресса
         private void ShowProgressDialog(string title, string message)
         {
             Dispatcher.Invoke(() =>
@@ -1311,6 +1411,28 @@ namespace Agencies.Client
             btnDeleteDeal.IsEnabled = isAdmin && dgDeals.SelectedItem != null;
         }
 
+        private void BtnReports_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentUser?.Role != "Admin")
+            {
+                MessageBox.Show("Только администраторы могут просматривать отчеты",
+                    "Доступ запрещен", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                var reportsWindow = new ReportsWindow(_apiService);
+                reportsWindow.Owner = this;
+                reportsWindow.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка открытия отчетов: {ex.Message}", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private async void BtnExportReport_Click(object sender, RoutedEventArgs e)
         {
             if (_currentUser?.Role != "Admin")
@@ -1343,10 +1465,10 @@ namespace Agencies.Client
                     {
                         StartDate = DateTime.Now.AddMonths(-1),
                         EndDate = DateTime.Now,
-                        TotalRevenue = _deals.Where(d => d.Status == "Completed").Sum(d => d.DealAmount),
+                        TotalRevenue = _deals.Where(d => d.Status == "Завершено").Sum(d => d.DealAmount),
                         TotalDeals = _deals.Count,
-                        CompletedDeals = _deals.Count(d => d.Status == "Completed"),
-                        PendingDeals = _deals.Count(d => d.Status == "Pending"),
+                        CompletedDeals = _deals.Count(d => d.Status == "Завершено"),
+                        PendingDeals = _deals.Count(d => d.Status == "В ожидании"),
                         AverageDealAmount = _deals.Any() ? _deals.Average(d => d.DealAmount) : 0,
                         AgentStatistics = new List<AgentStatisticsDto>()
                         // Здесь нужно добавить реальную статистику по агентам
@@ -1385,6 +1507,39 @@ namespace Agencies.Client
             {
                 HideProgressDialog();
             }
+        }
+
+        private void FilterDealsByStatus(string status)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (string.IsNullOrEmpty(status))
+                {
+                    // Показываем все сделки
+                    _deals.Clear();
+                    foreach (var deal in _allDeals)
+                    {
+                        _deals.Add(deal);
+                    }
+                }
+                else
+                {
+                    // Фильтруем по статусу
+                    var filtered = _allDeals.Where(d =>
+                        d.Status.Equals(status, StringComparison.OrdinalIgnoreCase) ||
+                        (status == "В ожидании" && d.Status.Contains("ожидании")) ||
+                        (status == "Завершено" && d.Status.Contains("Завершено")) ||
+                        (status == "Отменено" && d.Status.Contains("Отменено")));
+
+                    _deals.Clear();
+                    foreach (var deal in filtered)
+                    {
+                        _deals.Add(deal);
+                    }
+                }
+
+                tbStatus.Text = $"Показано сделок: {_deals.Count} из {_allDeals.Count}";
+            });
         }
     }
 
@@ -1468,14 +1623,37 @@ namespace Agencies.Client
             });
         }
 
-        private async Task LoadDealsAsync(bool forceRefresh = false, string status = "")
+        public async Task LoadDealsAsync(bool forceRefresh = false, string status = "")
         {
-            var deals = await _apiService.GetDealsAsync(status);
-            OnDataLoaded(new DataLoadedEventArgs
+            try
             {
-                DataType = DataType.Deals,
-                Data = deals
-            });
+                OnLoadingStatusChanged("Загрузка сделок...");
+
+                List<DealDto> deals;
+                if (string.IsNullOrEmpty(status))
+                {
+                    // Загружаем все сделки
+                    deals = await _apiService.GetDealsAsync();
+                }
+                else
+                {
+                    // Фильтруем на сервере по статусу
+                    deals = await _apiService.GetDealsAsync();
+                    deals = deals.Where(d =>
+                        d.Status.Equals(status, StringComparison.OrdinalIgnoreCase) ||
+                        d.Status.Contains(status)).ToList();
+                }
+
+                OnDataLoaded(new DataLoadedEventArgs
+                {
+                    DataType = DataType.Deals,
+                    Data = deals
+                });
+            }
+            catch (Exception ex)
+            {
+                OnLoadingError(ex);
+            }
         }
 
         public bool IsCacheValid()

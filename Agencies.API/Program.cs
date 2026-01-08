@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
 
@@ -44,18 +45,6 @@ else
     // builder.Logging.AddApplicationInsights(); // Раскомментировать если используете Application Insights
 }
 
-// Add services to the container
-//builder.Services.AddControllers(options =>
-//{
-//    options.Filters.Add<ValidationFilter>();
-//})
-//.AddFluentValidation(fv =>
-//{
-//    fv.RegisterValidatorsFromAssemblyContaining<CreatePropertyRequestValidator>();
-//    fv.ImplicitlyValidateChildProperties = true;
-//});
-
-// Add services to the container
 builder.Services.AddControllers();
 
 // Configure Swagger only in development/staging
@@ -244,27 +233,24 @@ if (builder.Configuration.GetValue<bool>("RateLimiting:EnableRateLimiting", fals
     });
 }
 
-// Configure Authorization
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy =>
-        policy.RequireClaim("Role", "Admin"));
+        policy.RequireClaim(ClaimTypes.Role, "Admin"));
 
     options.AddPolicy("UserOnly", policy =>
-        policy.RequireClaim("Role", "User"));
+        policy.RequireClaim(ClaimTypes.Role, "User")); 
 
     options.AddPolicy("AdminOrUser", policy =>
-        policy.RequireClaim("Role", "Admin", "User"));
+        policy.RequireClaim(ClaimTypes.Role, "Admin", "User")); 
 });
 
-// Add Infrastructure services
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -301,97 +287,174 @@ app.UseCors("CorsPolicy");
 
 
 
+//app.Use(async (context, next) =>
+//{
+//    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {context.Request.Method} {context.Request.Path}");
+//    await next();
+//    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {context.Request.Method} {context.Request.Path} - {context.Response.StatusCode}");
+//});
+
+//// Детальное логирование запросов
+//app.Use(async (context, next) =>
+//{
+//    // Логируем только POST/PUT запросы к API
+//    if ((context.Request.Method == "POST" || context.Request.Method == "PUT")
+//        && context.Request.Path.StartsWithSegments("/api"))
+//    {
+//        Console.WriteLine($"=== ДЕТАЛЬНЫЙ ЛОГ ЗАПРОСА [{DateTime.Now:HH:mm:ss.fff}] ===");
+//        Console.WriteLine($"URL: {context.Request.Method} {context.Request.Path}");
+//        Console.WriteLine($"Query: {context.Request.QueryString}");
+//        Console.WriteLine($"Content-Type: {context.Request.ContentType}");
+//        Console.WriteLine($"Content-Length: {context.Request.ContentLength}");
+
+//        // ДОБАВЬТЕ ЭТУ ИНФОРМАЦИЮ:
+//        Console.WriteLine($"User-Agent: {context.Request.Headers["User-Agent"]}");
+//        Console.WriteLine($"Referer: {context.Request.Headers["Referer"]}");
+//        Console.WriteLine($"Origin: {context.Request.Headers["Origin"]}");
+//        Console.WriteLine($"Host: {context.Request.Host}");
+//        Console.WriteLine($"Remote IP: {context.Connection.RemoteIpAddress}");
+//        Console.WriteLine($"Remote Port: {context.Connection.RemotePort}");
+
+//        // Заголовки авторизации (маскируем токен)
+//        var authHeader = context.Request.Headers["Authorization"].ToString();
+//        if (!string.IsNullOrEmpty(authHeader))
+//        {
+//            if (authHeader.Length > 50)
+//            {
+//                Console.WriteLine($"Authorization: {authHeader.Substring(0, 50)}...");
+//            }
+//            else
+//            {
+//                Console.WriteLine($"Authorization: {authHeader}");
+//            }
+//        }
+
+//        // Сохраняем оригинальный поток
+//        context.Request.EnableBuffering();
+
+//        // Читаем тело запроса
+//        var bodyStream = context.Request.Body;
+//        using (var reader = new StreamReader(bodyStream, Encoding.UTF8, leaveOpen: true))
+//        {
+//            var body = await reader.ReadToEndAsync();
+//            if (string.IsNullOrEmpty(body) || body == "null")
+//            {
+//                Console.WriteLine($"Body: [EMPTY or NULL] (length: {body?.Length ?? 0})");
+//            }
+//            else
+//            {
+//                Console.WriteLine($"Body: {body}");
+//            }
+
+//            // Возвращаем поток в начало
+//            bodyStream.Position = 0;
+//        }
+
+//        Console.WriteLine("--- КОНЕЦ ЛОГА ---");
+
+//        // Записываем в файл для дальнейшего анализа
+//        try
+//        {
+//            var logDir = Path.Combine(Directory.GetCurrentDirectory(), "logs");
+//            if (!Directory.Exists(logDir))
+//                Directory.CreateDirectory(logDir);
+
+//            var logFile = Path.Combine(logDir, $"requests_{DateTime.Now:yyyyMMdd}.log");
+//            var logEntry = $"[{DateTime.Now:HH:mm:ss.fff}] {context.Request.Method} {context.Request.Path} " +
+//                          $"RemoteIP:{context.Connection.RemoteIpAddress} " +
+//                          $"UserAgent:{context.Request.Headers["User-Agent"]} " +
+//                          $"BodySize:{context.Request.ContentLength}\n";
+
+//            File.AppendAllText(logFile, logEntry);
+//        }
+//        catch (Exception ex)
+//        {
+//            Console.WriteLine($"Ошибка записи в лог-файл: {ex.Message}");
+//        }
+//    }
+
+//    await next();
+//});
+
+//app.UseAuthentication();
+//app.UseAuthorization();
+
+// 1. Глобальное логирование ВСЕХ запросов (включая статические файлы, ошибки и т.д.)
 app.Use(async (context, next) =>
 {
-    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {context.Request.Method} {context.Request.Path}");
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] ВХОД: {context.Request.Method} {context.Request.Path}");
     await next();
-    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {context.Request.Method} {context.Request.Path} - {context.Response.StatusCode}");
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] ВЫХОД: {context.Request.Method} {context.Request.Path} - {context.Response.StatusCode}");
 });
 
-// Детальное логирование запросов
+// 2. Обработка HTTPS
+app.UseHttpsRedirection();
+
+// 3. CORS (должен быть до аутентификации!)
+app.UseCors("CorsPolicy");
+
+// 4. Статические файлы (если есть)
+// app.UseStaticFiles();
+
+// 5. Routing (маршрутизация)
+app.UseRouting();
+
+// 6. Аутентификация (должна быть ДО авторизации)
+app.UseAuthentication();
+
+// 7. Авторизация
+app.UseAuthorization();
+
+// 8. Rate Limiting (если используется)
+if (app.Configuration.GetValue<bool>("RateLimiting:EnableRateLimiting", false))
+{
+    app.UseRateLimiter();
+}
+
+// Добавьте этот middleware ПОСЛЕ app.UseAuthorization()
 app.Use(async (context, next) =>
 {
-    // Логируем только POST/PUT запросы к API
-    if ((context.Request.Method == "POST" || context.Request.Method == "PUT")
-        && context.Request.Path.StartsWithSegments("/api"))
+    // Сохраняем оригинальный поток ответа
+    var originalBodyStream = context.Response.Body;
+
+    using (var responseBody = new MemoryStream())
     {
-        Console.WriteLine($"=== ДЕТАЛЬНЫЙ ЛОГ ЗАПРОСА [{DateTime.Now:HH:mm:ss.fff}] ===");
-        Console.WriteLine($"URL: {context.Request.Method} {context.Request.Path}");
-        Console.WriteLine($"Query: {context.Request.QueryString}");
-        Console.WriteLine($"Content-Type: {context.Request.ContentType}");
-        Console.WriteLine($"Content-Length: {context.Request.ContentLength}");
+        // Временный поток для записи ответа
+        context.Response.Body = responseBody;
 
-        // ДОБАВЬТЕ ЭТУ ИНФОРМАЦИЮ:
-        Console.WriteLine($"User-Agent: {context.Request.Headers["User-Agent"]}");
-        Console.WriteLine($"Referer: {context.Request.Headers["Referer"]}");
-        Console.WriteLine($"Origin: {context.Request.Headers["Origin"]}");
-        Console.WriteLine($"Host: {context.Request.Host}");
-        Console.WriteLine($"Remote IP: {context.Connection.RemoteIpAddress}");
-        Console.WriteLine($"Remote Port: {context.Connection.RemotePort}");
+        await next();
 
-        // Заголовки авторизации (маскируем токен)
-        var authHeader = context.Request.Headers["Authorization"].ToString();
-        if (!string.IsNullOrEmpty(authHeader))
+        // Логируем ОШИБКИ (400, 401, 500 и т.д.)
+        if (context.Response.StatusCode >= 400)
         {
-            if (authHeader.Length > 50)
-            {
-                Console.WriteLine($"Authorization: {authHeader.Substring(0, 50)}...");
-            }
-            else
-            {
-                Console.WriteLine($"Authorization: {authHeader}");
-            }
+            Console.WriteLine($"=== ОШИБКА ОТВЕТА [{DateTime.Now:HH:mm:ss.fff}] ===");
+            Console.WriteLine($"URL: {context.Request.Method} {context.Request.Path}");
+            Console.WriteLine($"Status Code: {context.Response.StatusCode}");
+            Console.WriteLine($"Content-Type: {context.Response.ContentType}");
+
+            // Читаем тело ответа
+            responseBody.Seek(0, SeekOrigin.Begin);
+            var responseText = await new StreamReader(responseBody).ReadToEndAsync();
+            Console.WriteLine($"Response Body: {responseText}");
+            Console.WriteLine("--- КОНЕЦ ОШИБКИ ---");
+
+            // Возвращаем поток в начало для клиента
+            responseBody.Seek(0, SeekOrigin.Begin);
+            await responseBody.CopyToAsync(originalBodyStream);
         }
-
-        // Сохраняем оригинальный поток
-        context.Request.EnableBuffering();
-
-        // Читаем тело запроса
-        var bodyStream = context.Request.Body;
-        using (var reader = new StreamReader(bodyStream, Encoding.UTF8, leaveOpen: true))
+        else
         {
-            var body = await reader.ReadToEndAsync();
-            if (string.IsNullOrEmpty(body) || body == "null")
-            {
-                Console.WriteLine($"Body: [EMPTY or NULL] (length: {body?.Length ?? 0})");
-            }
-            else
-            {
-                Console.WriteLine($"Body: {body}");
-            }
-
-            // Возвращаем поток в начало
-            bodyStream.Position = 0;
-        }
-
-        Console.WriteLine("--- КОНЕЦ ЛОГА ---");
-
-        // Записываем в файл для дальнейшего анализа
-        try
-        {
-            var logDir = Path.Combine(Directory.GetCurrentDirectory(), "logs");
-            if (!Directory.Exists(logDir))
-                Directory.CreateDirectory(logDir);
-
-            var logFile = Path.Combine(logDir, $"requests_{DateTime.Now:yyyyMMdd}.log");
-            var logEntry = $"[{DateTime.Now:HH:mm:ss.fff}] {context.Request.Method} {context.Request.Path} " +
-                          $"RemoteIP:{context.Connection.RemoteIpAddress} " +
-                          $"UserAgent:{context.Request.Headers["User-Agent"]} " +
-                          $"BodySize:{context.Request.ContentLength}\n";
-
-            File.AppendAllText(logFile, logEntry);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Ошибка записи в лог-файл: {ex.Message}");
+            // Для успешных ответов просто копируем
+            responseBody.Seek(0, SeekOrigin.Begin);
+            await responseBody.CopyToAsync(originalBodyStream);
         }
     }
-
-    await next();
 });
+// 10. Endpoints (контроллеры)
+app.MapControllers();
 
-app.UseAuthentication();
-app.UseAuthorization();
+// 11. Health checks
+app.MapHealthChecks("/health");
 
 app.MapHealthChecks("/health");
 

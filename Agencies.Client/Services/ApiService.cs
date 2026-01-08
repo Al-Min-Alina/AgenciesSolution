@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using System.Linq;
+using System.ComponentModel.DataAnnotations;
 
 namespace Agencies.Client.Services
 {
@@ -15,12 +16,12 @@ namespace Agencies.Client.Services
         private readonly HttpClient _httpClient;
         private string _baseUrl;
         private string _token;
+        public event Action OnSessionExpired;
 
         public ApiService(string baseUrl = "https://localhost:7149/api/")
         {
             _baseUrl = baseUrl;
 
-            // Разрешаем недоверенные сертификаты (только для разработки!)
             var handler = new HttpClientHandler
             {
                 ServerCertificateCustomValidationCallback =
@@ -31,34 +32,84 @@ namespace Agencies.Client.Services
             _httpClient.DefaultRequestHeaders.Accept.Add(
                 new MediaTypeWithQualityHeaderValue("application/json"));
 
-            // Увеличиваем таймаут
             _httpClient.Timeout = TimeSpan.FromSeconds(30);
         }
 
         public void SetToken(string token)
         {
+            Console.WriteLine($"[ApiService.SetToken] Установка токена: {token?.Substring(0, Math.Min(20, token.Length))}...");
             _token = token;
             _httpClient.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", token);
+
+            // Проверяем, что токен установлен
+            Console.WriteLine($"[ApiService.SetToken] Проверка после установки: {HasToken()}");
         }
 
         public void ClearToken()
         {
+            Console.WriteLine($"[ApiService.ClearToken] Очистка токена");
             _token = null;
             _httpClient.DefaultRequestHeaders.Authorization = null;
         }
 
-        // Auth methods
+        public bool HasToken()
+        {
+            return _httpClient.DefaultRequestHeaders.Authorization != null;
+        }
+
+        public string GetTokenStatus()
+        {
+            var hasToken = HasToken();
+            var tokenValue = _httpClient.DefaultRequestHeaders.Authorization?.Parameter;
+            var tokenPreview = tokenValue != null
+                ? $"{tokenValue.Substring(0, Math.Min(20, tokenValue.Length))}..."
+                : "null";
+
+            return $"HasToken: {hasToken}, TokenPreview: {tokenPreview}";
+        }
+
         public async Task<LoginResponse> LoginAsync(LoginRequest request)
         {
-            var json = JsonConvert.SerializeObject(request);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            try
+            {
+                var json = JsonConvert.SerializeObject(request);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync($"{_baseUrl}auth/login", content);
-            response.EnsureSuccessStatusCode();
+                Console.WriteLine($"[LoginAsync] Отправка запроса на авторизацию: {_baseUrl}auth/login");
 
-            var responseJson = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<LoginResponse>(responseJson);
+                var response = await _httpClient.PostAsync($"{_baseUrl}auth/login", content);
+                response.EnsureSuccessStatusCode();
+
+                var responseJson = await response.Content.ReadAsStringAsync();
+                var loginResponse = JsonConvert.DeserializeObject<LoginResponse>(responseJson);
+
+                Console.WriteLine($"[LoginAsync] Получен токен: {loginResponse?.Token?.Substring(0, Math.Min(20, loginResponse?.Token?.Length ?? 0))}...");
+
+                if (string.IsNullOrEmpty(loginResponse?.Token))
+                {
+                    Console.WriteLine("[LoginAsync] ВНИМАНИЕ: Токен пустой или null!");
+                    throw new InvalidOperationException("Сервер не вернул токен авторизации");
+                }
+
+                // Устанавливаем токен
+                SetToken(loginResponse.Token);
+
+                // ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА:
+                Console.WriteLine($"[LoginAsync] После установки - HasToken: {HasToken()}");
+                Console.WriteLine($"[LoginAsync] Заголовки HttpClient после установки токена:");
+                foreach (var header in _httpClient.DefaultRequestHeaders)
+                {
+                    Console.WriteLine($"  {header.Key}: {string.Join(", ", header.Value)}");
+                }
+
+                return loginResponse;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[LoginAsync] Ошибка: {ex.Message}");
+                throw;
+            }
         }
 
         public async Task<bool> RegisterAsync(RegisterRequest request)
@@ -70,7 +121,6 @@ namespace Agencies.Client.Services
             return response.IsSuccessStatusCode;
         }
 
-        // Property methods
         public async Task<List<PropertyDto>> GetPropertiesAsync()
         {
             var response = await _httpClient.GetAsync($"{_baseUrl}properties");
@@ -91,14 +141,78 @@ namespace Agencies.Client.Services
 
         public async Task<PropertyDto> CreatePropertyAsync(CreatePropertyRequest request)
         {
-            var json = JsonConvert.SerializeObject(request);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            try
+            {
+                var json = JsonConvert.SerializeObject(request);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync($"{_baseUrl}properties", content);
-            response.EnsureSuccessStatusCode();
+                Console.WriteLine($"[CreatePropertyAsync] Отправка запроса на {_baseUrl}properties");
+                Console.WriteLine($"[CreatePropertyAsync] Статус токена: {GetTokenStatus()}");
 
-            var responseJson = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<PropertyDto>(responseJson);
+                var response = await _httpClient.PostAsync($"{_baseUrl}properties", content);
+
+                Console.WriteLine($"[CreatePropertyAsync] Ответ: {response.StatusCode}");
+
+                // Получаем тело ответа ДО проверки статуса
+                var responseContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"[CreatePropertyAsync] Тело ответа: {responseContent}");
+
+                if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    Console.WriteLine($"[CreatePropertyAsync] 400 Bad Request ДЕТАЛЬНО: {responseContent}");
+
+                    try
+                    {
+                        var validationResponse = JsonConvert.DeserializeObject<ValidationProblemDetailsResponse>(responseContent);
+
+                        if (validationResponse?.Errors != null && validationResponse.Errors.Any())
+                        {
+                            var errorMessages = new List<string>();
+
+                            foreach (var error in validationResponse.Errors)
+                            {
+                                foreach (var message in error.Value)
+                                {
+                                    errorMessages.Add($"{error.Key}: {message}");
+                                }
+                            }
+
+                            var fullErrorMessage = string.Join("\n", errorMessages);
+                            Console.WriteLine($"[CreatePropertyAsync] Сообщения валидации: {fullErrorMessage}");
+
+                            throw new ValidationException(fullErrorMessage);
+                        }
+                        else if (!string.IsNullOrEmpty(validationResponse?.Title))
+                        {
+                            throw new ValidationException($"{validationResponse.Title}: {validationResponse.Detail}");
+                        }
+                    }
+                    catch (JsonException jsonEx)
+                    {
+                        Console.WriteLine($"[CreatePropertyAsync] Ошибка десериализации: {jsonEx.Message}");
+                        // Если не удалось десериализовать, показываем как есть
+                        throw new ValidationException($"Ошибка валидации: {responseContent}");
+                    }
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"[CreatePropertyAsync] Ошибка {response.StatusCode}: {responseContent}");
+                    response.EnsureSuccessStatusCode();
+                }
+
+                return JsonConvert.DeserializeObject<PropertyDto>(responseContent);
+            }
+            catch (ValidationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[CreatePropertyAsync] Ошибка: {ex.Message}");
+                Console.WriteLine($"[CreatePropertyAsync] StackTrace: {ex.StackTrace}");
+                throw;
+            }
         }
 
         public async Task<PropertyDto> UpdatePropertyAsync(int id, UpdatePropertyRequest request)
@@ -107,6 +221,14 @@ namespace Agencies.Client.Services
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PutAsync($"{_baseUrl}properties/{id}", content);
+
+            // Добавьте обработку 401
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                OnSessionExpired?.Invoke();
+                throw new UnauthorizedAccessException("Сессия истекла. Пожалуйста, войдите снова.");
+            }
+
             response.EnsureSuccessStatusCode();
 
             var responseJson = await response.Content.ReadAsStringAsync();
@@ -116,10 +238,17 @@ namespace Agencies.Client.Services
         public async Task<bool> DeletePropertyAsync(int id)
         {
             var response = await _httpClient.DeleteAsync($"{_baseUrl}properties/{id}");
+
+            // Добавьте обработку 401
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                OnSessionExpired?.Invoke();
+                throw new UnauthorizedAccessException("Сессия истекла. Пожалуйста, войдите снова.");
+            }
+
             return response.IsSuccessStatusCode;
         }
 
-        // Client methods
         public async Task<List<ClientDto>> GetClientsAsync(string search = "")
         {
             var url = string.IsNullOrEmpty(search)
@@ -172,7 +301,6 @@ namespace Agencies.Client.Services
             return response.IsSuccessStatusCode;
         }
 
-        // Deal methods
         public async Task<List<DealDto>> GetDealsAsync(string status = "", string search = "")
         {
             var url = $"{_baseUrl}deals";
@@ -216,14 +344,59 @@ namespace Agencies.Client.Services
 
         public async Task<DealDto> UpdateDealAsync(int id, UpdateDealRequest request)
         {
-            var json = JsonConvert.SerializeObject(request);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            try
+            {
+                var json = JsonConvert.SerializeObject(request);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PutAsync($"{_baseUrl}deals/{id}", content);
-            response.EnsureSuccessStatusCode();
+                Console.WriteLine($"[UpdateDealAsync] Отправка запроса на обновление сделки ID: {id}");
+                var response = await _httpClient.PutAsync($"{_baseUrl}deals/{id}", content);
 
-            var responseJson = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<DealDto>(responseJson);
+                Console.WriteLine($"[UpdateDealAsync] Ответ: {response.StatusCode}");
+
+                // Получаем тело ответа для отладки
+                var responseContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"[UpdateDealAsync] Тело ответа: '{responseContent}'");
+
+                response.EnsureSuccessStatusCode();
+
+                // Если сервер возвращает 204 No Content, получаем обновленную сделку отдельным запросом
+                if (response.StatusCode == System.Net.HttpStatusCode.NoContent || string.IsNullOrEmpty(responseContent))
+                {
+                    Console.WriteLine($"[UpdateDealAsync] Получен 204 No Content, получаем обновленную сделку...");
+                    return await GetDealAsync(id);
+                }
+                else if (!string.IsNullOrEmpty(responseContent))
+                {
+                    // Если сервер вернул тело ответа, десериализуем его
+                    try
+                    {
+                        var deal = JsonConvert.DeserializeObject<DealDto>(responseContent);
+                        if (deal == null)
+                        {
+                            Console.WriteLine($"[UpdateDealAsync] Десериализация вернула null, получаем через GetDealAsync");
+                            return await GetDealAsync(id);
+                        }
+                        return deal;
+                    }
+                    catch (JsonException jsonEx)
+                    {
+                        Console.WriteLine($"[UpdateDealAsync] Ошибка десериализации: {jsonEx.Message}, получаем через GetDealAsync");
+                        return await GetDealAsync(id);
+                    }
+                }
+                else
+                {
+                    // В любом случае получаем обновленную сделку
+                    return await GetDealAsync(id);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[UpdateDealAsync] Ошибка: {ex.Message}");
+                Console.WriteLine($"[UpdateDealAsync] StackTrace: {ex.StackTrace}");
+                throw;
+            }
         }
 
         public async Task<bool> DeleteDealAsync(int id)
@@ -280,9 +453,6 @@ namespace Agencies.Client.Services
             return response.IsSuccessStatusCode;
         }
 
-        // Добавьте эти методы в конец класса ApiService:
-
-        // Report methods
         public async Task<SalesReportDto> GetSalesReportAsync(DateTime? startDate = null, DateTime? endDate = null)
         {
             try
@@ -472,8 +642,8 @@ namespace Agencies.Client.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"🔴 [GetAgentsAsync] Исключение: {ex.Message}");
-                Console.WriteLine($"🔴 [GetAgentsAsync] StackTrace: {ex.StackTrace}");
+                Console.WriteLine($"[GetAgentsAsync] Исключение: {ex.Message}");
+                Console.WriteLine($"[GetAgentsAsync] StackTrace: {ex.StackTrace}");
                 throw;
             }
         }
@@ -501,5 +671,20 @@ namespace Agencies.Client.Services
             var json = await response.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<List<UserDto>>(json);
         }
+    }
+    public class ValidationProblemDetailsResponse
+    {
+        public string Type { get; set; }
+        public string Title { get; set; }
+        public int Status { get; set; }
+        public string Detail { get; set; }
+        public Dictionary<string, string[]> Errors { get; set; }
+        public string TraceId { get; set; }
+    }
+
+    public class ValidationException : Exception
+    {
+        public ValidationException(string message) : base(message) { }
+        public ValidationException(string message, Exception innerException) : base(message, innerException) { }
     }
 }

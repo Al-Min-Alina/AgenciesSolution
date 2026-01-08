@@ -224,7 +224,7 @@ namespace Agencies.Client.Services
 
         private bool IsValidPropertyType(string type)
         {
-            var validTypes = new[] { "Apartment", "House", "Commercial", "Land", "Other" };
+            var validTypes = new[] { "Квартира", "Дом", "Коммерческая недвижимость" };
             return validTypes.Contains(type);
         }
 
@@ -253,7 +253,7 @@ namespace Agencies.Client.Services
 
         private bool IsValidDealStatus(string status)
         {
-            var validStatuses = new[] { "Pending", "Completed", "Cancelled", "OnHold", "Failed" };
+            var validStatuses = new[] { "В ожидании", "Завершено", "Отменено"};
             return validStatuses.Contains(status);
         }
     }

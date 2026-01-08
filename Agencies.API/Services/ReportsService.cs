@@ -1,4 +1,5 @@
-﻿using Agencies.Core.DTO;
+﻿
+using Agencies.Core.DTO;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;

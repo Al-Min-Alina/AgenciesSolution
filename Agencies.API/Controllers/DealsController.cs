@@ -151,7 +151,7 @@ namespace Agencies.API.Controllers
             var createdDeal = await _dealRepository.AddAsync(deal);
 
             // Обновляем статус объекта недвижимости
-            if (request.Status == "Completed")
+            if (request.Status == "Завершено")
             {
                 property.IsAvailable = false;
                 await _propertyRepository.UpdateAsync(property);
@@ -234,14 +234,14 @@ namespace Agencies.API.Controllers
             {
                 // Освобождаем старый объект
                 var oldProperty = await _propertyRepository.GetByIdAsync(oldPropertyId);
-                if (oldProperty != null && oldStatus == "Completed")
+                if (oldProperty != null && oldStatus == "Завершено")
                 {
                     oldProperty.IsAvailable = true;
                     await _propertyRepository.UpdateAsync(oldProperty);
                 }
 
                 // Блокируем новый объект, если сделка завершена
-                if (request.Status == "Completed")
+                if (request.Status == "Завершено")
                 {
                     property.IsAvailable = false;
                     await _propertyRepository.UpdateAsync(property);
@@ -250,7 +250,7 @@ namespace Agencies.API.Controllers
             else if (oldStatus != request.Status)
             {
                 // Меняем статус доступности объекта
-                property.IsAvailable = (request.Status != "Completed");
+                property.IsAvailable = (request.Status != "Завершено");
                 await _propertyRepository.UpdateAsync(property);
             }
 
@@ -269,7 +269,7 @@ namespace Agencies.API.Controllers
             }
 
             // Освобождаем объект недвижимости
-            if (deal.Status == "Completed")
+            if (deal.Status == "Завершено")
             {
                 var property = await _propertyRepository.GetByIdAsync(deal.PropertyId);
                 if (property != null)
@@ -310,10 +310,10 @@ namespace Agencies.API.Controllers
             var statistics = new
             {
                 TotalDeals = deals.Count(),
-                CompletedDeals = deals.Count(d => d.Status == "Completed"),
-                PendingDeals = deals.Count(d => d.Status == "Pending"),
-                CancelledDeals = deals.Count(d => d.Status == "Cancelled"),
-                TotalRevenue = deals.Where(d => d.Status == "Completed").Sum(d => d.DealAmount),
+                CompletedDeals = deals.Count(d => d.Status == "Завершено"),
+                PendingDeals = deals.Count(d => d.Status == "В ожидании"),
+                CancelledDeals = deals.Count(d => d.Status == "Отменено"),
+                TotalRevenue = deals.Where(d => d.Status == "Завершено").Sum(d => d.DealAmount),
                 AverageDealAmount = deals.Any() ? deals.Average(d => d.DealAmount) : 0
             };
 

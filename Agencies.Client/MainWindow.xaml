@@ -272,13 +272,13 @@
                                 Click="BtnDeleteDeal_Click"/>
 
                         <ComboBox x:Name="cbDealStatusFilter" 
-                                  Width="120" 
-                                  Margin="20,0,0,0"
-                                  SelectionChanged="CbDealStatusFilter_SelectionChanged">
-                            <ComboBoxItem Content="Все" Tag=""/>
-                            <ComboBoxItem Content="В процессе" Tag="Pending"/>
-                            <ComboBoxItem Content="Завершены" Tag="Completed"/>
-                            <ComboBoxItem Content="Отменены" Tag="Cancelled"/>
+          Width="120" 
+          Margin="20,0,0,0"
+          SelectionChanged="CbDealStatusFilter_SelectionChanged">
+                            <ComboBoxItem Content="Все" IsSelected="True"/>
+                            <ComboBoxItem Content="В ожидании"/>
+                            <ComboBoxItem Content="Завершено"/>
+                            <ComboBoxItem Content="Отменено"/>
                         </ComboBox>
 
                         <!-- Новые элементы -->
@@ -359,6 +359,10 @@
                                 Padding="10,5" 
                                 Margin="10,0,0,0"
                                 Click="BtnExportReport_Click"/>
+                        <Button x:Name="btnReports" Content="📊 Отчеты" 
+        Click="BtnReports_Click" 
+        ToolTip="Открыть отчеты и статистику"
+        Margin="10,0,0,0"/>
                     </StackPanel>
 
                     <!-- Report Content Area -->

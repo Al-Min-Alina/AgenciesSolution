@@ -12,9 +12,9 @@ TRACE;DEBUG;NET;NET8_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR
 D:\AgenciesSolution\Agencies.Client\App.xaml
 8-1733192148
 
-25-1190030896
-242-707301918
+29620329774
+2651815629759
 Dialogs\ClientDialog.xaml;Dialogs\DealDialog.xaml;Dialogs\ProgressDialog.xaml;LoginWindow.xaml;MainWindow.xaml;PropertyDialog.xaml;Views\LogViewerWindow.xaml;Views\ReportsWindow.xaml;
 
-True
+False
 
