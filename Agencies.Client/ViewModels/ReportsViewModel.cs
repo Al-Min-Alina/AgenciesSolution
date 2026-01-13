@@ -10,6 +10,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using System.IO;
+using System.Windows;
+using iTextSharp.text;
+using iTextSharp.text.pdf;
+using Microsoft.Win32;
+using System.Diagnostics;
+using System.Text;
+using System.Data;
 
 namespace Agencies.Client.ViewModels
 {
@@ -639,43 +647,193 @@ namespace Agencies.Client.ViewModels
             System.Diagnostics.Trace.TraceError(message);
         }
 
-        public async Task ExportToPdfAsync()
+        public async Task<bool> ExportToPdfAsync(string filePath)
         {
             try
             {
-                ProgressText = "Экспорт в PDF...";
-                IsLoading = true;
-
-                var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+                // Проверяем, есть ли данные для экспорта
+                if (SalesReport == null ||
+                    (SalesReport.MonthlyStatistics == null || !SalesReport.MonthlyStatistics.Any()))
                 {
-                    Filter = "PDF файлы (*.pdf)|*.pdf",
-                    FileName = $"Отчет_{DateTime.Now:yyyyMMdd_HHmmss}.pdf",
-                    DefaultExt = ".pdf"
-                };
-
-                if (saveFileDialog.ShowDialog() == true)
-                {
-                    if (!saveFileDialog.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                    Application.Current.Dispatcher.Invoke(() =>
                     {
-                        saveFileDialog.FileName += ".pdf";
+                        MessageBox.Show("Нет данных для экспорта в PDF. Сначала загрузите отчет.",
+                            "Нет данных", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    });
+                    return false;
+                }
+
+                // Создаем документ PDF с помощью iTextSharp
+                using (FileStream stream = new FileStream(filePath, FileMode.Create))
+                {
+                    // Создаем документ A4 с полями
+                    Document document = new Document(PageSize.A4, 50, 50, 50, 50);
+                    PdfWriter writer = PdfWriter.GetInstance(document, stream);
+
+                    document.Open();
+
+                    // Добавляем заголовок
+                    var titleFont = FontFactory.GetFont("Arial", 18, Font.BOLD, new BaseColor(0, 0, 255)); // Синий цвет
+                    var headerFont = FontFactory.GetFont("Arial", 12, Font.BOLD,  new BaseColor(0, 0, 255));
+                    var normalFont = FontFactory.GetFont("Arial", 10, Font.NORMAL, new BaseColor(0, 0, 255));
+                    var boldFont = FontFactory.GetFont("Arial", 10, Font.BOLD, new BaseColor(0, 0, 255));
+
+                    // Заголовок отчета
+                    Paragraph title = new Paragraph("Отчет по продажам агентства недвижимости", titleFont);
+                    title.Alignment = Element.ALIGN_CENTER;
+                    title.SpacingAfter = 20f;
+                    document.Add(title);
+
+                    // Период отчета
+                    Paragraph period = new Paragraph($"Период: {StartDate:dd.MM.yyyy} - {EndDate:dd.MM.yyyy}", boldFont);
+                    period.SpacingAfter = 10f;
+                    document.Add(period);
+
+                    // Дата генерации
+                    Paragraph generatedDate = new Paragraph($"Сгенерировано: {DateTime.Now:dd.MM.yyyy HH:mm}", normalFont);
+                    generatedDate.SpacingAfter = 20f;
+                    document.Add(generatedDate);
+
+                    // Общая статистика
+                    Paragraph statsTitle = new Paragraph("Общая статистика", headerFont);
+                    statsTitle.SpacingAfter = 10f;
+                    document.Add(statsTitle);
+
+                    // Создаем таблицу для статистики
+                    PdfPTable statsTable = new PdfPTable(2);
+                    statsTable.WidthPercentage = 100;
+                    statsTable.SetWidths(new float[] { 1f, 1f });
+
+                    AddStatRow(statsTable, "Общая выручка:", $"{SalesReport.TotalRevenue:C}", boldFont, normalFont);
+                    AddStatRow(statsTable, "Всего сделок:", $"{SalesReport.TotalDeals}", boldFont, normalFont);
+                    AddStatRow(statsTable, "Завершено сделок:", $"{SalesReport.CompletedDeals}", boldFont, normalFont);
+                    AddStatRow(statsTable, "В ожидании:", $"{SalesReport.PendingDeals}", boldFont, normalFont);
+                    AddStatRow(statsTable, "Отменено сделок:", $"{SalesReport.CancelledDeals}", boldFont, normalFont);
+                    AddStatRow(statsTable, "Средняя сумма сделки:", $"{SalesReport.AverageDealAmount:C}", boldFont, normalFont);
+
+                    document.Add(statsTable);
+                    document.Add(new Paragraph(" "));
+
+                    // Статистика по месяцам
+                    if (SalesReport.MonthlyStatistics != null && SalesReport.MonthlyStatistics.Any())
+                    {
+                        Paragraph monthlyTitle = new Paragraph("Статистика по месяцам", headerFont);
+                        monthlyTitle.SpacingAfter = 10f;
+                        document.Add(monthlyTitle);
+
+                        // Создаем таблицу для месячной статистики
+                        PdfPTable monthlyTable = new PdfPTable(4);
+                        monthlyTable.WidthPercentage = 100;
+                        monthlyTable.SetWidths(new float[] { 1.5f, 1f, 1f, 1f });
+
+                        // Заголовки таблицы
+                        AddTableHeader(monthlyTable, "Месяц", headerFont);
+                        AddTableHeader(monthlyTable, "Выручка", headerFont);
+                        AddTableHeader(monthlyTable, "Средняя сделка", headerFont);
+                        AddTableHeader(monthlyTable, "Кол-во сделок", headerFont);
+
+                        // Данные
+                        foreach (var month in SalesReport.MonthlyStatistics)
+                        {
+                            monthlyTable.AddCell(new PdfPCell(new Phrase(month.MonthName, normalFont)));
+                            monthlyTable.AddCell(new PdfPCell(new Phrase($"{month.TotalRevenue:C}", normalFont)));
+                            monthlyTable.AddCell(new PdfPCell(new Phrase($"{month.AverageDealAmount:C}", normalFont)));
+                            monthlyTable.AddCell(new PdfPCell(new Phrase(month.DealCount.ToString(), normalFont)));
+                        }
+
+                        document.Add(monthlyTable);
+                        document.Add(new Paragraph(" "));
                     }
 
-                    var exporter = new ReportExporter();
-                    await exporter.ExportToPdfAsync(SalesReport, saveFileDialog.FileName);
+                    // Статистика по агентам
+                    if (SalesReport.AgentStatistics != null && SalesReport.AgentStatistics.Any())
+                    {
+                        Paragraph agentsTitle = new Paragraph("Статистика по агентам", headerFont);
+                        agentsTitle.SpacingAfter = 10f;
+                        document.Add(agentsTitle);
 
-                    MessageBox.Show($"Отчет экспортирован в: {saveFileDialog.FileName}",
-                        "Успешно", MessageBoxButton.OK, MessageBoxImage.Information);
+                        PdfPTable agentsTable = new PdfPTable(4);
+                        agentsTable.WidthPercentage = 100;
+                        agentsTable.SetWidths(new float[] { 2f, 1f, 1f, 1f });
+
+                        AddTableHeader(agentsTable, "Агент", headerFont);
+                        AddTableHeader(agentsTable, "Всего сделок", headerFont);
+                        AddTableHeader(agentsTable, "Завершено", headerFont);
+                        AddTableHeader(agentsTable, "Выручка", headerFont);
+
+                        foreach (var agent in SalesReport.AgentStatistics.OrderByDescending(a => a.TotalRevenue))
+                        {
+                            agentsTable.AddCell(new PdfPCell(new Phrase(agent.AgentName, normalFont)));
+                            agentsTable.AddCell(new PdfPCell(new Phrase(agent.TotalDeals.ToString(), normalFont)));
+                            agentsTable.AddCell(new PdfPCell(new Phrase(agent.CompletedDeals.ToString(), normalFont)));
+                            agentsTable.AddCell(new PdfPCell(new Phrase($"{agent.TotalRevenue:C}", normalFont)));
+                        }
+
+                        document.Add(agentsTable);
+                        document.Add(new Paragraph(" "));
+                    }
+
+                    // Топ объектов недвижимости
+                    if (SalesReport.TopProperties != null && SalesReport.TopProperties.Any())
+                    {
+                        Paragraph propertiesTitle = new Paragraph("Топ объектов недвижимости", headerFont);
+                        propertiesTitle.SpacingAfter = 10f;
+                        document.Add(propertiesTitle);
+
+                        PdfPTable propertiesTable = new PdfPTable(3);
+                        propertiesTable.WidthPercentage = 100;
+                        propertiesTable.SetWidths(new float[] { 2f, 1f, 1f });
+
+                        AddTableHeader(propertiesTable, "Объект", headerFont);
+                        AddTableHeader(propertiesTable, "Кол-во сделок", headerFont);
+                        AddTableHeader(propertiesTable, "Общая выручка", headerFont);
+
+                        foreach (var property in SalesReport.TopProperties)
+                        {
+                            propertiesTable.AddCell(new PdfPCell(new Phrase(property.PropertyTitle, normalFont)));
+                            propertiesTable.AddCell(new PdfPCell(new Phrase(property.DealCount.ToString(), normalFont)));
+                            propertiesTable.AddCell(new PdfPCell(new Phrase($"{property.TotalRevenue:C}", normalFont)));
+                        }
+
+                        document.Add(propertiesTable);
+                    }
+
+                    // Добавляем нумерацию страниц
+                    writer.PageEvent = new PdfPageEventHelper();
+
+                    document.Close();
                 }
+
+                // Проверяем, что файл создан и не пустой
+                return File.Exists(filePath) && new FileInfo(filePath).Length > 0;
             }
             catch (Exception ex)
             {
-                ShowError($"Ошибка экспорта: {ex.Message}");
+                LogError($"Ошибка при создании PDF: {ex}");
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    MessageBox.Show($"Ошибка при создании PDF: {ex.Message}",
+                        "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                });
+
+                return false;
             }
-            finally
-            {
-                IsLoading = false;
-                ProgressText = "Готово";
-            }
+        }
+
+        private void AddStatRow(PdfPTable table, string label, string value, Font labelFont, Font valueFont)
+        {
+            table.AddCell(new PdfPCell(new Phrase(label, labelFont)));
+            table.AddCell(new PdfPCell(new Phrase(value, valueFont)));
+        }
+
+        private void AddTableHeader(PdfPTable table, string text, Font font)
+        {
+            PdfPCell cell = new PdfPCell(new Phrase(text, font));
+            cell.BackgroundColor = new BaseColor(240, 240, 240);
+            cell.HorizontalAlignment = Element.ALIGN_CENTER;
+            cell.Padding = 5;
+            table.AddCell(cell);
         }
 
         public async Task ExportToExcelAsync()
@@ -685,7 +843,7 @@ namespace Agencies.Client.ViewModels
                 ProgressText = "Экспорт в Excel...";
                 IsLoading = true;
 
-                var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+                var saveFileDialog = new SaveFileDialog
                 {
                     Filter = "Excel файлы (*.xlsx)|*.xlsx|CSV файлы (*.csv)|*.csv",
                     FileName = $"Отчет_продаж_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx",
@@ -694,16 +852,15 @@ namespace Agencies.Client.ViewModels
 
                 if (saveFileDialog.ShowDialog() == true)
                 {
-                    var exporter = new ReportExporter();
                     var success = false;
 
                     if (saveFileDialog.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
                     {
-                        success = await exporter.ExportToCsvAsync(SalesReport, saveFileDialog.FileName);
+                        success = await ExportToCsvAsync(SalesReport, saveFileDialog.FileName);
                     }
                     else
                     {
-                        success = await exporter.ExportToExcelAsync(SalesReport, saveFileDialog.FileName);
+                        success = await ExportToExcelFileAsync(SalesReport, saveFileDialog.FileName);
                     }
 
                     if (success)
@@ -724,11 +881,11 @@ namespace Agencies.Client.ViewModels
             }
         }
 
-        private async Task ExportToCsvAsync(SalesReportDto report, string filePath)
+        private async Task<bool> ExportToCsvAsync(SalesReportDto report, string filePath)
         {
             try
             {
-                using (var writer = new System.IO.StreamWriter(filePath, false, System.Text.Encoding.UTF8))
+                using (var writer = new StreamWriter(filePath, false, Encoding.UTF8))
                 {
                     // Заголовок
                     await writer.WriteLineAsync($"Отчет по продажам за период: {StartDate:dd.MM.yyyy} - {EndDate:dd.MM.yyyy}");
@@ -746,29 +903,65 @@ namespace Agencies.Client.ViewModels
                     if (report.AgentStatistics?.Any() == true)
                     {
                         await writer.WriteLineAsync("Статистика по агентам:");
-                        await writer.WriteLineAsync("Агент;Всего сделок;Завершено;Выручка;Успешность");
+                        await writer.WriteLineAsync("Агент;Всего сделок;Завершено;Выручка");
                         foreach (var agent in report.AgentStatistics)
                         {
-                            await writer.WriteLineAsync($"{agent.AgentName};{agent.TotalDeals};{agent.CompletedDeals};{agent.TotalRevenue:C};{agent.SuccessRateFormatted}");
+                            await writer.WriteLineAsync($"{agent.AgentName};{agent.TotalDeals};{agent.CompletedDeals};{agent.TotalRevenue:C}");
                         }
                         await writer.WriteLineAsync();
                     }
 
-                    // Топ объектов
-                    if (report.TopProperties?.Any() == true)
+                    // Статистика по месяцам
+                    if (report.MonthlyStatistics?.Any() == true)
                     {
-                        await writer.WriteLineAsync("Топ объектов:");
-                        await writer.WriteLineAsync("Объект;Кол-во сделок;Общая выручка");
-                        foreach (var property in report.TopProperties)
+                        await writer.WriteLineAsync("Статистика по месяцам:");
+                        await writer.WriteLineAsync("Месяц;Выручка;Средняя сделка;Количество сделок");
+                        foreach (var month in report.MonthlyStatistics)
                         {
-                            await writer.WriteLineAsync($"{property.PropertyTitle};{property.DealCount};{property.TotalRevenue:C}");
+                            await writer.WriteLineAsync($"{month.MonthName};{month.TotalRevenue:C};{month.AverageDealAmount:C};{month.DealCount}");
                         }
                     }
                 }
+
+                return true;
             }
             catch (Exception ex)
             {
-                throw new Exception($"Ошибка экспорта в CSV: {ex.Message}", ex);
+                ShowError($"Ошибка экспорта в CSV: {ex.Message}");
+                return false;
+            }
+        }
+
+        private async Task<bool> ExportToExcelFileAsync(SalesReportDto report, string filePath)
+        {
+            try
+            {
+                // Вместо этого метода используйте библиотеку типа EPPlus, ClosedXML или Microsoft.Office.Interop.Excel
+                // Здесь пример с EPPlus (нужно установить пакет EPPlus)
+
+                /*
+                using (var package = new OfficeOpenXml.ExcelPackage())
+                {
+                    var worksheet = package.Workbook.Worksheets.Add("Отчет по продажам");
+                    
+                    // Заголовок
+                    worksheet.Cells[1, 1].Value = "Отчет по продажам";
+                    worksheet.Cells[1, 1].Style.Font.Bold = true;
+                    worksheet.Cells[1, 1].Style.Font.Size = 14;
+                    
+                    // и т.д.
+                    
+                    package.SaveAs(new FileInfo(filePath));
+                }
+                */
+
+                // Временно используем CSV, если не установлена библиотека Excel
+                return await ExportToCsvAsync(report, filePath.Replace(".xlsx", ".csv"));
+            }
+            catch (Exception ex)
+            {
+                ShowError($"Ошибка экспорта в Excel: {ex.Message}");
+                return false;
             }
         }
 

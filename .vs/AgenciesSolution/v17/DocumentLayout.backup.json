@@ -3,6 +3,30 @@
   "WorkspaceRootPath": "D:\\AgenciesSolution\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|d:\\agenciessolution\\agencies.client\\viewmodels\\reportsviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|solutionrelative:agencies.client\\viewmodels\\reportsviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|d:\\agenciessolution\\agencies.client\\viewmodels\\baseviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|solutionrelative:agencies.client\\viewmodels\\baseviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|d:\\agenciessolution\\agencies.client\\services\\reportsservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|solutionrelative:agencies.client\\services\\reportsservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|d:\\agenciessolution\\agencies.client\\views\\reportswindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|solutionrelative:agencies.client\\views\\reportswindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|d:\\agenciessolution\\agencies.client\\views\\reportswindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|solutionrelative:agencies.client\\views\\reportswindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D45F894A-EBAF-4763-BA3B-AC23EB004F41}|Agencies.Core\\Agencies.Core.csproj|d:\\agenciessolution\\agencies.core\\dto\\reportdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D45F894A-EBAF-4763-BA3B-AC23EB004F41}|Agencies.Core\\Agencies.Core.csproj|solutionrelative:agencies.core\\dto\\reportdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|d:\\agenciessolution\\agencies.client\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|solutionrelative:agencies.client\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
@@ -11,44 +35,12 @@
       "RelativeMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|solutionrelative:agencies.client\\services\\reportexporter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|d:\\agenciessolution\\agencies.client\\views\\reportswindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|solutionrelative:agencies.client\\views\\reportswindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|d:\\agenciessolution\\agencies.client\\viewmodels\\reportsviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|solutionrelative:agencies.client\\viewmodels\\reportsviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|d:\\agenciessolution\\agencies.client\\views\\reportswindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|solutionrelative:agencies.client\\views\\reportswindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|d:\\agenciessolution\\agencies.client\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|solutionrelative:agencies.client\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|d:\\agenciessolution\\agencies.client\\viewmodels\\baseviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|solutionrelative:agencies.client\\viewmodels\\baseviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D45F894A-EBAF-4763-BA3B-AC23EB004F41}|Agencies.Core\\Agencies.Core.csproj|d:\\agenciessolution\\agencies.core\\dto\\reportdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D45F894A-EBAF-4763-BA3B-AC23EB004F41}|Agencies.Core\\Agencies.Core.csproj|solutionrelative:agencies.core\\dto\\reportdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|d:\\agenciessolution\\agencies.client\\services\\reportgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|solutionrelative:agencies.client\\services\\reportgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|d:\\agenciessolution\\agencies.client\\services\\reportsservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|solutionrelative:agencies.client\\services\\reportsservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{5139AFD1-1A93-4772-8DD2-7A00CC46ADC7}|Agencies.API\\Agencies.API.csproj|d:\\agenciessolution\\agencies.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{5139AFD1-1A93-4772-8DD2-7A00CC46ADC7}|Agencies.API\\Agencies.API.csproj|solutionrelative:agencies.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|d:\\agenciessolution\\agencies.client\\services\\apiservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|solutionrelative:agencies.client\\services\\apiservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{14C803AD-C2CC-4272-860E-67D4CE6FDC43}|Agencies.Client\\Agencies.Client.csproj|d:\\agenciessolution\\agencies.client\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -62,11 +54,11 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 6,
               "Title": "MainWindow.xaml",
               "DocumentMoniker": "D:\\AgenciesSolution\\Agencies.Client\\MainWindow.xaml",
               "RelativeDocumentMoniker": "Agencies.Client\\MainWindow.xaml",
@@ -83,7 +75,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 1,
               "Title": "BaseViewModel.cs",
               "DocumentMoniker": "D:\\AgenciesSolution\\Agencies.Client\\ViewModels\\BaseViewModel.cs",
               "RelativeDocumentMoniker": "Agencies.Client\\ViewModels\\BaseViewModel.cs",
@@ -96,33 +88,33 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 0,
               "Title": "ReportsViewModel.cs",
               "DocumentMoniker": "D:\\AgenciesSolution\\Agencies.Client\\ViewModels\\ReportsViewModel.cs",
               "RelativeDocumentMoniker": "Agencies.Client\\ViewModels\\ReportsViewModel.cs",
               "ToolTip": "D:\\AgenciesSolution\\Agencies.Client\\ViewModels\\ReportsViewModel.cs",
               "RelativeToolTip": "Agencies.Client\\ViewModels\\ReportsViewModel.cs",
-              "ViewState": "AgIAALcCAAAAAAAAAAAswNcCAAAJAAAAAAAAAA==",
+              "ViewState": "AgIAAJsCAAAAAAAAAAAlwKYCAABTAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-01-03T22:09:22.753Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 4,
               "Title": "ReportsWindow.xaml.cs",
               "DocumentMoniker": "D:\\AgenciesSolution\\Agencies.Client\\Views\\ReportsWindow.xaml.cs",
               "RelativeDocumentMoniker": "Agencies.Client\\Views\\ReportsWindow.xaml.cs",
               "ToolTip": "D:\\AgenciesSolution\\Agencies.Client\\Views\\ReportsWindow.xaml.cs",
               "RelativeToolTip": "Agencies.Client\\Views\\ReportsWindow.xaml.cs",
-              "ViewState": "AgIAAB4AAAAAAAAAAAAswDIAAAAJAAAAAAAAAA==",
+              "ViewState": "AgIAAJQAAAAAAAAAAAAQwJYAAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-01-03T21:35:35.069Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 3,
               "Title": "ReportsWindow.xaml",
               "DocumentMoniker": "D:\\AgenciesSolution\\Agencies.Client\\Views\\ReportsWindow.xaml",
               "RelativeDocumentMoniker": "Agencies.Client\\Views\\ReportsWindow.xaml",
@@ -134,20 +126,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 2,
               "Title": "ReportsService.cs",
               "DocumentMoniker": "D:\\AgenciesSolution\\Agencies.Client\\Services\\ReportsService.cs",
               "RelativeDocumentMoniker": "Agencies.Client\\Services\\ReportsService.cs",
               "ToolTip": "D:\\AgenciesSolution\\Agencies.Client\\Services\\ReportsService.cs",
               "RelativeToolTip": "Agencies.Client\\Services\\ReportsService.cs",
-              "ViewState": "AgIAAMgBAAAAAAAAAAAgwNsBAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAADAAAAAAAAAAAAAAANsBAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-01-03T21:30:55.734Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 9,
               "Title": "ReportGenerator.cs",
               "DocumentMoniker": "D:\\AgenciesSolution\\Agencies.Client\\Services\\ReportGenerator.cs",
               "RelativeDocumentMoniker": "Agencies.Client\\Services\\ReportGenerator.cs",
@@ -155,12 +147,11 @@
               "RelativeToolTip": "Agencies.Client\\Services\\ReportGenerator.cs",
               "ViewState": "AgIAABEBAAAAAAAAAAAgwCQBAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-03T21:30:35.508Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-03T21:30:35.508Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 7,
               "Title": "ReportExporter.cs",
               "DocumentMoniker": "D:\\AgenciesSolution\\Agencies.Client\\Services\\ReportExporter.cs",
               "RelativeDocumentMoniker": "Agencies.Client\\Services\\ReportExporter.cs",
@@ -168,25 +159,24 @@
               "RelativeToolTip": "Agencies.Client\\Services\\ReportExporter.cs",
               "ViewState": "AgIAAJABAAAAAAAAAAAIwKEBAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-03T20:58:21.552Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-03T20:58:21.552Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 5,
               "Title": "ReportDto.cs",
               "DocumentMoniker": "D:\\AgenciesSolution\\Agencies.Core\\DTO\\ReportDto.cs",
               "RelativeDocumentMoniker": "Agencies.Core\\DTO\\ReportDto.cs",
               "ToolTip": "D:\\AgenciesSolution\\Agencies.Core\\DTO\\ReportDto.cs",
               "RelativeToolTip": "Agencies.Core\\DTO\\ReportDto.cs",
-              "ViewState": "AgIAAJcAAAAAAAAAAAAgwKoAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAKoAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-01-03T20:55:53.646Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 8,
               "Title": "MainWindow.xaml.cs",
               "DocumentMoniker": "D:\\AgenciesSolution\\Agencies.Client\\MainWindow.xaml.cs",
               "RelativeDocumentMoniker": "Agencies.Client\\MainWindow.xaml.cs",
@@ -194,12 +184,11 @@
               "RelativeToolTip": "Agencies.Client\\MainWindow.xaml.cs",
               "ViewState": "AgIAAIEFAAAAAAAAAAAUwJkFAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-28T10:43:33.503Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-28T10:43:33.503Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 10,
               "Title": "App.xaml.cs",
               "DocumentMoniker": "D:\\AgenciesSolution\\Agencies.Client\\App.xaml.cs",
               "RelativeDocumentMoniker": "Agencies.Client\\App.xaml.cs",
@@ -208,31 +197,6 @@
               "ViewState": "AgIAACYBAAAAAAAAAAAAALkAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-01-02T07:07:32.19Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 11,
-              "Title": "ApiService.cs",
-              "DocumentMoniker": "D:\\AgenciesSolution\\Agencies.Client\\Services\\ApiService.cs",
-              "RelativeDocumentMoniker": "Agencies.Client\\Services\\ApiService.cs",
-              "ToolTip": "D:\\AgenciesSolution\\Agencies.Client\\Services\\ApiService.cs",
-              "RelativeToolTip": "Agencies.Client\\Services\\ApiService.cs",
-              "ViewState": "AgIAAJ0CAAAAAAAAAAAAAI8BAAAJAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-01T18:50:55.582Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "Program.cs",
-              "DocumentMoniker": "D:\\AgenciesSolution\\Agencies.API\\Program.cs",
-              "RelativeDocumentMoniker": "Agencies.API\\Program.cs",
-              "ToolTip": "D:\\AgenciesSolution\\Agencies.API\\Program.cs",
-              "RelativeToolTip": "Agencies.API\\Program.cs",
-              "ViewState": "AgIAAMoCAAAAAAAAAAAAAC4AAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-20T11:36:15.474Z",
-              "EditorCaption": ""
             }
           ]
         }
